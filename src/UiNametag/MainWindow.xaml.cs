@@ -290,11 +290,14 @@ public partial class MainWindow : Window
     // ── 대기열 ──────────────────────────────
     void RefreshQueue()
     {
-        var picks = Store.Picks().OrderByDescending(p => p.No).Select(p => new PickRow(p)).ToList();
+        var all = Store.Picks();
+        _checked.RemoveWhere(n => !all.Any(p => p.No == n && !p.Done)); // 고쳤거나 지운 항목은 체크에서 뺌
+        var picks = all.OrderByDescending(p => p.No).Select(p => new PickRow(p, _checked)).ToList();
         var recs = Store.Recs().Select(r => new RecRow(r)).ToList();
         PicksList.ItemsSource = picks; PicksEmpty.Visibility = Show(picks.Count == 0);
         RecsList.ItemsSource = recs; RecsEmpty.Visibility = Show(recs.Count == 0);
         AskClaudeButton.IsEnabled = CopyPromptButton.IsEnabled = picks.Any(p => !p.P.Done);
+        UpdateSendButtons();
         RefreshStatus();
     }
 
@@ -308,9 +311,28 @@ public partial class MainWindow : Window
     void ClearTakenButton_Click(object s, RoutedEventArgs e) { Store.RemoveDone(); RefreshQueue(); }
 
     // 대기열 → Claude Code 연동: 새 터미널에서 Claude Code를 켜고 가져가 고치게 한다 (대화형이라 사용자가 보고 답할 수 있음)
-    public static (string Exe, string Args, string Dir)? ClaudeCommand()
+    // 보낼 항목: 체크한 것(아직 안 고친 것만), 아무것도 안 골랐으면 안 고친 것 전부
+    public static List<Pick> ToSend(ICollection<int>? sel)
     {
         var todo = Store.Picks().Where(p => !p.Done).ToList();
+        var picked = todo.Where(p => sel?.Contains(p.No) == true).ToList();
+        return picked.Count > 0 ? picked : todo;
+    }
+
+    readonly HashSet<int> _checked = []; // 대기열에서 체크한 번호
+
+    void PickCheck_Click(object s, RoutedEventArgs e) => UpdateSendButtons();
+
+    void UpdateSendButtons()
+    {
+        var n = Store.Picks().Count(p => !p.Done && _checked.Contains(p.No));
+        AskClaudeButton.Content = n > 0 ? $"Claude에게 고치게 하기 ({n})" : "Claude에게 고치게 하기";
+        CopyPromptButton.Content = n > 0 ? $"지시문 복사 ({n})" : "지시문 복사";
+    }
+
+    public static (string Exe, string Args, string Dir)? ClaudeCommand(ICollection<int>? sel = null)
+    {
+        var todo = ToSend(sel);
         if (todo.Count == 0) return null;
         // 일할 폴더: 항목들의 앱 소스 폴더가 하나면 거기, 아니면 가장 많은 것 (캡처는 소스가 없음)
         var dir = todo.Select(p => p.Target.Source).Where(Directory.Exists).GroupBy(x => x).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault()
@@ -328,7 +350,7 @@ public partial class MainWindow : Window
     // 이미 열어 둔 터미널(Claude Code)에 붙여 넣을 수 있게 지시문만 복사
     void CopyPromptButton_Click(object s, RoutedEventArgs e)
     {
-        var todo = Store.Picks().Where(p => !p.Done).ToList();
+        var todo = ToSend(_checked);
         if (todo.Count == 0) { QueueHint.Text = "고칠 항목이 없어요."; return; }
         Clipboard.SetText(ClaudePrompt(todo));
         QueueHint.Text = $"지시문을 복사했어요 (항목 {todo.Count}개). 원하는 터미널의 Claude Code에 붙여 넣으세요.";
@@ -336,7 +358,7 @@ public partial class MainWindow : Window
 
     void AskClaudeButton_Click(object s, RoutedEventArgs e)
     {
-        if (ClaudeCommand() is not { } c) { QueueHint.Text = "고칠 항목이 없어요."; return; }
+        if (ClaudeCommand(_checked) is not { } c) { QueueHint.Text = "고칠 항목이 없어요."; return; }
         try { Process.Start(new ProcessStartInfo(c.Exe, c.Args) { UseShellExecute = true }); QueueHint.Text = $"Claude Code를 켰어요 ({c.Dir}). 고치면 '✓ 고침 완료'로 바뀌어요."; }
         catch (Exception ex) { QueueHint.Text = "Claude Code를 못 켰어요: " + ex.Message; }
     }

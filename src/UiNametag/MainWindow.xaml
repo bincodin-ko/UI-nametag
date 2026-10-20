@@ -267,6 +267,7 @@
                             <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,10">
                                 <DockPanel>
                                     <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="지우기" Foreground="{StaticResource Muted}" VerticalAlignment="Top" Tag="{Binding}" Click="DeletePick_Click"/>
+                                    <CheckBox DockPanel.Dock="Left" Style="{StaticResource Check}" Margin="0,4,12,0" VerticalAlignment="Top" IsChecked="{Binding Sel, Mode=TwoWay}" Visibility="{Binding SelVis}" Click="PickCheck_Click" ToolTip="체크한 것만 Claude에게 보내요 (아무것도 안 고르면 남은 것 전부)"/>
                                     <Button DockPanel.Dock="Left" Style="{StaticResource Row}" Padding="0" Margin="0,0,14,0" VerticalAlignment="Top" Visibility="{Binding ThumbVis}" Tag="{Binding}" Click="Thumb_Click" ToolTip="누르면 크게 보기">
                                         <Border Width="140" MaxHeight="100" CornerRadius="4" BorderBrush="{StaticResource Line}" BorderThickness="1" ClipToBounds="True">
                                             <Image Source="{Binding Thumb}" Stretch="Uniform"/>

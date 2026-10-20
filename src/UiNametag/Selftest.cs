@@ -166,6 +166,21 @@ public static class Selftest
         mw.CopyPromptButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
         var clip = Clipboard.ContainsText() ? Clipboard.GetText() : "";
         Row("9 지시문 복사", !Store.Picks().Any(p => !p.Done) || (clip.Contains("uinametag MCP") && clip.Contains("mark_done")), clip.Length > 50 ? clip[..50] + "…" : clip);
+
+        // 체크한 것만 보내기: 첫 체크 칸을 켜고 복사 → 그 번호 하나만 들어가야 함
+        mw.UpdateLayout();
+        var boxes = FindAll<System.Windows.Controls.CheckBox>(mw.PicksList).Where(c => c.IsVisible).ToList();
+        Row("9 체크 칸 보임", boxes.Count == Store.Picks().Count(p => !p.Done), $"체크 칸 {boxes.Count}개");
+        if (boxes.Count > 0)
+        {
+            var row = (PickRow)boxes[0].DataContext;
+            boxes[0].IsChecked = true;
+            boxes[0].RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+            mw.CopyPromptButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+            var one = Clipboard.ContainsText() ? Clipboard.GetText() : "";
+            Row("9 체크한 것만", one.Contains($"(번호 {row.P.No})") && (mw.CopyPromptButton.Content as string)!.Contains("(1)"), $"체크 #{row.P.No} → {(one.Length > 50 ? one[..50] + "…" : one)} · 버튼 \"{mw.CopyPromptButton.Content}\"");
+            boxes[0].IsChecked = false;
+        }
         if (oldClip != null) Clipboard.SetText(oldClip); else Clipboard.Clear(); // 사용자 클립보드 되돌림
         Row("9 대기열 그림 미리보기", withShot == Store.Picks().Count(p => p.Shot != null && File.Exists(p.Shot)), $"그림 칸 {withShot}개");
         mw.Go("settings"); var st = mw.SettingsPage.IsVisible && mw.McpCommandBox.Text.Contains(" mcp");

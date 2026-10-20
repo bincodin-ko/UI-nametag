@@ -17,9 +17,11 @@ public class AppRow(AppInfo a)
     public static Brush Res(string key) => (Brush)Application.Current.FindResource(key);
 }
 
-public class PickRow(Pick p)
+public class PickRow(Pick p, HashSet<int>? sel = null)
 {
     public Pick P { get; } = p;
+    public bool Sel { get => sel?.Contains(P.No) == true; set { if (sel == null) return; if (value) sel.Add(P.No); else sel.Remove(P.No); } }
+    public Visibility SelVis => P.Done ? Visibility.Hidden : Visibility.Visible;
     public string Head => $"#{P.No} · {(P.Target.Outside ? "사전 밖 " : "")}{P.Target.App} · {Act}";
     public string Label => P.Target.Label;
     public string Memo => P.Memo.Length > 0 ? P.Memo : "(메모 없음)";
