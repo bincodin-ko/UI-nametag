@@ -181,6 +181,36 @@ public static class Selftest
             Row("9 체크한 것만", one.Contains($"(번호 {row.P.No})") && (mw.CopyPromptButton.Content as string)!.Contains("(1)"), $"체크 #{row.P.No} → {(one.Length > 50 ? one[..50] + "…" : one)} · 버튼 \"{mw.CopyPromptButton.Content}\"");
             boxes[0].IsChecked = false;
         }
+
+        // 녹화도 체크해서 보내기 → MCP mark_done(recordings)로 '고침 완료'
+        var fake = new Recording(Store.NewRecId() + "_st", "", "selftest", [0, 0, 10, 10], DateTime.Now, 1, [], "selftest 녹화 보내기");
+        Store.SaveRec(fake);
+        mw.Go("queue"); mw.UpdateLayout();
+        var recBox = FindAll<System.Windows.Controls.CheckBox>(mw.RecsList).FirstOrDefault(c => c.DataContext is RecRow rr && rr.R.Id == fake.Id);
+        if (recBox != null) { recBox.IsChecked = true; recBox.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent)); }
+        mw.CopyPromptButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+        var rc = Clipboard.ContainsText() ? Clipboard.GetText() : "";
+        var md = await Call(mcp, "mark_done", new() { ["recordings"] = new[] { fake.Id } });
+        var done = Store.LoadRec(fake.Id)?.Done == true;
+        Row("9 녹화 보내기", recBox != null && rc.Contains("get_recording") && rc.Contains(fake.Id) && !rc.Contains("get_picks") && done, $"체크 칸 {recBox != null} · {(rc.Length > 60 ? rc[..60] + "…" : rc)} · {md}");
+        File.Delete(Path.Combine(Catalog.DataDir, fake.Id + ".json"));
+
+        // 버튼 위치·반응형: 글자가 바뀌어도 옆 버튼이 안 움직이고, 좁은 창에선 줄바꿈되어 안 잘리고, 넓은 창에선 넓어진다
+        mw.Go("queue"); mw.Width = 960; mw.UpdateLayout();
+        Point Pos(FrameworkElement e) => e.TranslatePoint(new Point(0, 0), mw.QueueBody);
+        var btnBefore = Pos(mw.ClearTakenButton);
+        var listBefore = Pos(mw.PicksList);
+        mw.CopyPromptButton.Content = "지시문 복사 (12)"; mw.AskClaudeButton.Content = "Claude에게 고치게 하기 (12)";
+        mw.QueueHint.Text = new string('가', 300); mw.UpdateLayout();
+        var still = Pos(mw.ClearTakenButton) == btnBefore && Pos(mw.PicksList) == listBefore;
+        mw.Width = 720; mw.UpdateLayout();
+        var fits = new FrameworkElement[] { mw.AskClaudeButton, mw.CopyPromptButton, mw.ClearTakenButton, mw.OpenQueueFolderButton }
+            .All(b => Pos(b).X + b.ActualWidth <= mw.QueueBody.ActualWidth + 1);
+        var narrow = mw.QueueBody.ActualWidth;
+        mw.Width = 1400; mw.UpdateLayout();
+        var wide = mw.QueueBody.ActualWidth;
+        Row("9 대기열 반응형", still && fits && wide > narrow + 300, $"글자 바뀌어도 그대로 {still} · 720폭 버튼 안 잘림 {fits} · 본문 폭 {narrow:F0}→{wide:F0}");
+        mw.Width = 960;
         if (oldClip != null) Clipboard.SetText(oldClip); else Clipboard.Clear(); // 사용자 클립보드 되돌림
         Row("9 대기열 그림 미리보기", withShot == Store.Picks().Count(p => p.Shot != null && File.Exists(p.Shot)), $"그림 칸 {withShot}개");
         mw.Go("settings"); var st = mw.SettingsPage.IsVisible && mw.McpCommandBox.Text.Contains(" mcp");

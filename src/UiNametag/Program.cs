@@ -28,6 +28,26 @@ public static class Program
                     Console.WriteLine($"pid={p.Current.ProcessId} {Catalog.Kind(p.Current.ControlType)} id='{p.Current.AutomationId}' name='{p.Current.Name}' rect={p.Current.BoundingRectangle}");
                 Console.WriteLine("resolve: " + Catalog.Resolve(pt)?.Label);
                 return 0;
+            case "snap": // snap 페이지 폭 높이 파일.png : 메인 창을 화면 밖에 띄워 그림으로 (겉모습·반응형 확인용)
+                var sa = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                LoadTheme(sa);
+                sa.Startup += (_, _) =>
+                {
+                    var w = new MainWindow(null!) { Left = -4000, ShowActivated = false, ShowInTaskbar = false, Width = double.Parse(args[2]), Height = double.Parse(args[3]) };
+                    w.Show(); w.Go(args[1]); w.UpdateLayout();
+                    sa.Dispatcher.BeginInvoke(() =>
+                    {
+                        var bmp = new System.Windows.Media.Imaging.RenderTargetBitmap((int)w.ActualWidth, (int)w.ActualHeight, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                        var dv = new System.Windows.Media.DrawingVisual(); // 창 바탕색까지 (Content만 그리면 바탕이 흰색으로 나옴)
+                        using (var dc = dv.RenderOpen()) { dc.DrawRectangle(w.Background, null, new Rect(0, 0, w.ActualWidth, w.ActualHeight)); dc.DrawRectangle(new System.Windows.Media.VisualBrush((System.Windows.Media.Visual)w.Content), null, new Rect(0, 0, ((FrameworkElement)w.Content).ActualWidth, ((FrameworkElement)w.Content).ActualHeight)); }
+                        bmp.Render(dv);
+                        var enc = new System.Windows.Media.Imaging.PngBitmapEncoder(); enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp));
+                        using (var f = System.IO.File.Create(args[4])) enc.Save(f);
+                        sa.Shutdown();
+                    }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                };
+                sa.Run();
+                return 0;
             case "mcp":
                 var b = Host.CreateApplicationBuilder();
                 b.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);

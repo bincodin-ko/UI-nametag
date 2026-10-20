@@ -39,8 +39,9 @@ public static class McpTools
         return (warn.Length > 0 ? warn + "\n\n" : "") + JsonSerializer.Serialize(picks, Catalog.Json);
     }
 
-    [McpServerTool(Name = "mark_done"), Description("get_picks로 받은 항목을 실제로 고친 뒤 번호들을 '고침 완료'로 표시한다. 사용자 대기열 화면에 보인다.")]
-    public static string MarkDone([Description("고친 항목 번호들 (No)")] int[] numbers) => $"고침 표시 {Store.MarkDone(numbers)}건";
+    [McpServerTool(Name = "mark_done"), Description("get_picks·get_recording으로 받은 것을 실제로 고친 뒤 '고침 완료'로 표시한다. 사용자 대기열 화면에 보인다.")]
+    public static string MarkDone([Description("고친 항목 번호들 (No)")] int[]? numbers = null, [Description("고친 녹화 id들 (rec_…)")] string[]? recordings = null) =>
+        $"고침 표시: 항목 {Store.MarkDone(numbers ?? [])}건, 녹화 {Store.MarkRecDone(recordings ?? [])}건";
 
     [McpServerTool(Name = "catalog_lookup"), Description("AutomationId나 이름 일부로 등록한 앱들의 사전에서 파일:줄을 찾는다. 파일은 그 앱 소스 폴더 기준.")]
     public static string CatalogLookup(string query, [Description("앱 이름 일부(선택)")] string? app = null) =>

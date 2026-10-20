@@ -42,9 +42,13 @@ public class PickRow(Pick p, HashSet<int>? sel = null)
     public Brush TakenBrush => AppRow.Res(P.Done ? "Ok" : P.Delivered ? "Muted" : "Accent");
 }
 
-public class RecRow(Recording r)
+public class RecRow(Recording r, HashSet<string>? sel = null)
 {
     public Recording R { get; } = r;
+    public bool Sel { get => sel?.Contains(R.Id) == true; set { if (sel == null) return; if (value) sel.Add(R.Id); else sel.Remove(R.Id); } }
+    public Visibility SelVis => R.Done ? Visibility.Hidden : Visibility.Visible;
+    public string Taken => R.Done ? "✓ 고침 완료" : "대기 중";
+    public Brush TakenBrush => AppRow.Res(R.Done ? "Ok" : "Accent");
     public string Head => $"{R.Id} · {R.Seconds:F1}초";
     public string Memo => R.Memo.Length > 0 ? R.Memo : "(메모 없음)";
     public string Window => $"창 \"{R.Window}\" · {R.Start:MM-dd HH:mm}";

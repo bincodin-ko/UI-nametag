@@ -9,7 +9,7 @@ public record Target(string Id, string Kind, string Name, double[] Rect, string?
 public record Move(Target Anchor, string Where, double[] Rect);
 public record Pick(int No, DateTime Time, string Action, Target Target, string Memo, Move? Move, List<double[]>? Strokes, string? Shot, bool Delivered, bool Done = false);
 public record RecEvent(double T, string What, Target? Target, string? State);
-public record Recording(string Id, string Video, string Window, double[] Rect, DateTime Start, double Seconds, List<RecEvent> Events, string Memo);
+public record Recording(string Id, string Video, string Window, double[] Rect, DateTime Start, double Seconds, List<RecEvent> Events, string Memo, bool Done = false);
 
 // 대기열(picks.json)과 녹화 묶음(rec_N.json) 저장
 public static class Store
@@ -37,6 +37,15 @@ public static class Store
 
     public static void RemovePick(int no) { var l = Picks(); l.RemoveAll(p => p.No == no); Save(l); }
     // Claude가 고친 뒤 표시 (가져감 = 읽기만 함, 고침 = 실제로 고침)
+    // 녹화도 고친 뒤 '고침 완료'
+    public static int MarkRecDone(IEnumerable<string> ids)
+    {
+        int n = 0;
+        foreach (var id in ids)
+            if (LoadRec(id) is { } r) { SaveRec(r with { Done = true }); n++; }
+        return n;
+    }
+
     public static int MarkDone(IEnumerable<int> nos)
     {
         var set = nos.ToHashSet();

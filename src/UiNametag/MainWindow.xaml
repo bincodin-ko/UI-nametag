@@ -247,17 +247,17 @@
 
         <!-- ② 대기열 -->
         <ScrollViewer x:Name="QueuePage" Grid.Column="1" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
-            <StackPanel Margin="28,22" MaxWidth="760" HorizontalAlignment="Left">
-                <DockPanel>
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                        <Button x:Name="AskClaudeButton" Style="{StaticResource Primary}" Margin="0,0,8,0" Content="Claude에게 고치게 하기" Click="AskClaudeButton_Click" ToolTip="새 터미널에서 Claude Code를 켜고 대기열을 가져가 고치게 합니다"/>
-                        <Button x:Name="CopyPromptButton" Style="{StaticResource Btn}" Margin="0,0,8,0" Content="지시문 복사" Click="CopyPromptButton_Click" ToolTip="이미 열어 둔 터미널의 Claude Code에 붙여 넣을 지시문을 복사합니다"/>
-                        <Button x:Name="ClearTakenButton" Style="{StaticResource Btn}" Content="고친 것 지우기" Click="ClearTakenButton_Click"/>
-                        <Button x:Name="OpenQueueFolderButton" Style="{StaticResource Btn}" Margin="8,0,0,0" Content="폴더 열기" Click="OpenDataDirButton_Click"/>
-                    </StackPanel>
-                    <TextBlock Text="대기열" FontSize="20" FontWeight="SemiBold"/>
-                </DockPanel>
-                <TextBlock x:Name="QueueHint" Style="{StaticResource Sub}" Margin="0,4,0,0" Text="'Claude에게 고치게 하기'를 누르면 Claude Code가 새 창에서 대기열을 가져가 고치고, 고친 것은 '✓ 고침 완료'로 바뀌어요."/>
+            <StackPanel x:Name="QueueBody" Margin="28,22" MaxWidth="1100">
+                <TextBlock Text="대기열" FontSize="20" FontWeight="SemiBold"/>
+                <!-- 버튼: 창이 좁으면 다음 줄로 (WrapPanel). 글자가 "(1)"처럼 바뀌어도 옆 버튼이 안 밀리게 최소 폭 -->
+                <WrapPanel x:Name="QueueActions" Margin="0,10,0,0">
+                    <Button x:Name="AskClaudeButton" Style="{StaticResource Primary}" MinWidth="210" Margin="0,0,8,8" Content="Claude에게 고치게 하기" Click="AskClaudeButton_Click" ToolTip="새 터미널에서 Claude Code를 켜고 대기열을 가져가 고치게 합니다"/>
+                    <Button x:Name="CopyPromptButton" Style="{StaticResource Btn}" MinWidth="130" Margin="0,0,8,8" Content="지시문 복사" Click="CopyPromptButton_Click" ToolTip="이미 열어 둔 터미널의 Claude Code에 붙여 넣을 지시문을 복사합니다"/>
+                    <Button x:Name="ClearTakenButton" Style="{StaticResource Btn}" Margin="0,0,8,8" Content="고친 것 지우기" Click="ClearTakenButton_Click"/>
+                    <Button x:Name="OpenQueueFolderButton" Style="{StaticResource Btn}" Margin="0,0,8,8" Content="폴더 열기" Click="OpenDataDirButton_Click"/>
+                </WrapPanel>
+                <!-- 안내 글은 두 줄 높이로 고정: 글이 바뀌어도 아래 목록이 출렁이지 않게 -->
+                <TextBlock x:Name="QueueHint" Style="{StaticResource Sub}" Height="34" TextTrimming="CharacterEllipsis" Text="'Claude에게 고치게 하기'를 누르면 Claude Code가 새 창에서 대기열을 가져가 고치고, 고친 것은 '✓ 고침 완료'로 바뀌어요. 체크하면 고른 것만 보내요."/>
 
                 <TextBlock Text="고른 부품" Style="{StaticResource H}" Margin="0,20,0,6"/>
                 <TextBlock x:Name="PicksEmpty" Style="{StaticResource Sub}" Text="아직 고른 부품이 없어요. Ctrl+Shift+G로 앱 부품을 골라 메모하거나, Ctrl+Shift+S로 화면 일부를 찍어 보내세요." Visibility="Collapsed"/>
@@ -295,8 +295,12 @@
                             <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,10">
                                 <DockPanel>
                                     <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="지우기" Foreground="{StaticResource Muted}" VerticalAlignment="Top" Tag="{Binding}" Click="DeleteRec_Click"/>
+                                    <CheckBox DockPanel.Dock="Left" Style="{StaticResource Check}" Margin="0,2,12,0" VerticalAlignment="Top" IsChecked="{Binding Sel, Mode=TwoWay}" Visibility="{Binding SelVis}" Click="PickCheck_Click" ToolTip="체크한 것만 Claude에게 보내요 (아무것도 안 고르면 남은 것 전부)"/>
                                     <StackPanel>
-                                        <TextBlock Text="{Binding Head}" FontWeight="SemiBold"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Head}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding Taken}" FontSize="12" Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{Binding TakenBrush}"/>
+                                        </StackPanel>
                                         <TextBlock Text="{Binding Window}" Style="{StaticResource Sub}" Margin="0,2,0,0"/>
                                         <TextBlock Text="{Binding Memo}" Margin="0,3,0,0"/>
                                     </StackPanel>
