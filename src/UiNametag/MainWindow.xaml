@@ -251,6 +251,7 @@
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                         <Button x:Name="AskClaudeButton" Style="{StaticResource Primary}" Margin="0,0,8,0" Content="Claude에게 고치게 하기" Click="AskClaudeButton_Click" ToolTip="새 터미널에서 Claude Code를 켜고 대기열을 가져가 고치게 합니다"/>
+                        <Button x:Name="CopyPromptButton" Style="{StaticResource Btn}" Margin="0,0,8,0" Content="지시문 복사" Click="CopyPromptButton_Click" ToolTip="이미 열어 둔 터미널의 Claude Code에 붙여 넣을 지시문을 복사합니다"/>
                         <Button x:Name="ClearTakenButton" Style="{StaticResource Btn}" Content="고친 것 지우기" Click="ClearTakenButton_Click"/>
                         <Button x:Name="OpenQueueFolderButton" Style="{StaticResource Btn}" Margin="8,0,0,0" Content="폴더 열기" Click="OpenDataDirButton_Click"/>
                     </StackPanel>

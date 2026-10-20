@@ -294,7 +294,7 @@ public partial class MainWindow : Window
         var recs = Store.Recs().Select(r => new RecRow(r)).ToList();
         PicksList.ItemsSource = picks; PicksEmpty.Visibility = Show(picks.Count == 0);
         RecsList.ItemsSource = recs; RecsEmpty.Visibility = Show(recs.Count == 0);
-        AskClaudeButton.IsEnabled = picks.Any(p => !p.P.Done);
+        AskClaudeButton.IsEnabled = CopyPromptButton.IsEnabled = picks.Any(p => !p.P.Done);
         RefreshStatus();
     }
 
@@ -315,10 +315,23 @@ public partial class MainWindow : Window
         // 일할 폴더: 항목들의 앱 소스 폴더가 하나면 거기, 아니면 가장 많은 것 (캡처는 소스가 없음)
         var dir = todo.Select(p => p.Target.Source).Where(Directory.Exists).GroupBy(x => x).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault()
             ?? Apps.List().Select(a => a.Source).FirstOrDefault(Directory.Exists) ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var prompt = $"uinametag MCP의 get_picks로 UiNametag 대기열(번호 {string.Join(",", todo.Select(p => p.No))})을 가져와서 고쳐줘. " +
-                     "Action=shot은 Shot 경로 그림을 열어 보고, 항목마다 Source 폴더와 File:Line을 기준으로 고쳐. 뜻이 애매하면 고치기 전에 나한테 물어봐. " +
-                     "실제로 고친 번호만 mark_done으로 표시해.";
+        var prompt = ClaudePrompt(todo);
         return ("wt.exe", $"-d \"{dir}\" claude \"{prompt.Replace('"', '\'')}\"", dir);
+    }
+
+    // Claude에게 줄 지시문 (새 터미널로 켤 때와 복사할 때 같은 글)
+    public static string ClaudePrompt(List<Pick> todo) =>
+        $"uinametag MCP의 get_picks로 UiNametag 대기열(번호 {string.Join(",", todo.Select(p => p.No))})을 가져와서 고쳐줘. " +
+        "Action=shot은 Shot 경로 그림을 열어 보고, 항목마다 Source 폴더와 File:Line을 기준으로 고쳐. 뜻이 애매하면 고치기 전에 나한테 물어봐. " +
+        "실제로 고친 번호만 mark_done으로 표시해.";
+
+    // 이미 열어 둔 터미널(Claude Code)에 붙여 넣을 수 있게 지시문만 복사
+    void CopyPromptButton_Click(object s, RoutedEventArgs e)
+    {
+        var todo = Store.Picks().Where(p => !p.Done).ToList();
+        if (todo.Count == 0) { QueueHint.Text = "고칠 항목이 없어요."; return; }
+        Clipboard.SetText(ClaudePrompt(todo));
+        QueueHint.Text = $"지시문을 복사했어요 (항목 {todo.Count}개). 원하는 터미널의 Claude Code에 붙여 넣으세요.";
     }
 
     void AskClaudeButton_Click(object s, RoutedEventArgs e)

@@ -162,6 +162,11 @@ public static class Selftest
         var withShot = ((IEnumerable<PickRow>)mw.PicksList.ItemsSource).Count(r => r.Thumb != null);
         var cc = MainWindow.ClaudeCommand();
         Row("9 Claude 연동 명령", cc == null ? !Store.Picks().Any(p => !p.Done) : cc.Value.Args.Contains("get_picks") && cc.Value.Args.Contains("mark_done") && Directory.Exists(cc.Value.Dir), cc?.Args.Length > 0 ? $"wt {cc.Value.Args[..Math.Min(90, cc.Value.Args.Length)]}…" : "고칠 항목 없음");
+        var oldClip = Clipboard.ContainsText() ? Clipboard.GetText() : null;
+        mw.CopyPromptButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+        var clip = Clipboard.ContainsText() ? Clipboard.GetText() : "";
+        Row("9 지시문 복사", !Store.Picks().Any(p => !p.Done) || (clip.Contains("uinametag MCP") && clip.Contains("mark_done")), clip.Length > 50 ? clip[..50] + "…" : clip);
+        if (oldClip != null) Clipboard.SetText(oldClip); else Clipboard.Clear(); // 사용자 클립보드 되돌림
         Row("9 대기열 그림 미리보기", withShot == Store.Picks().Count(p => p.Shot != null && File.Exists(p.Shot)), $"그림 칸 {withShot}개");
         mw.Go("settings"); var st = mw.SettingsPage.IsVisible && mw.McpCommandBox.Text.Contains(" mcp");
         mw.Go("register"); await Task.Delay(300);
@@ -313,12 +318,20 @@ public static class Selftest
 
     static async Task<AutomationElement> IinaWindow()
     {
-        var p = Process.GetProcessesByName("IINA").FirstOrDefault(x => x.MainWindowHandle != IntPtr.Zero)
-            ?? Process.Start(Environment.GetEnvironmentVariable("IINA_EXE") ?? @"C:\Users\gusql\AppData\Local\Programs\IINA\IINA.exe");
-        for (int i = 0; i < 40 && p.MainWindowHandle == IntPtr.Zero; i++) { await Task.Delay(250); p.Refresh(); }
-        await Task.Delay(1500);
-        Front(p.MainWindowHandle);
-        return AutomationElement.FromHandle(p.MainWindowHandle);
+        if (!Process.GetProcessesByName("IINA").Any(x => x.MainWindowHandle != IntPtr.Zero))
+            Process.Start(Environment.GetEnvironmentVariable("IINA_EXE") ?? @"C:\Users\gusql\AppData\Local\Programs\IINA\IINA.exe");
+        // Electron은 처음 띄운 프로세스가 아닌 다른 프로세스가 창을 가진다 → 창이 있고 settings 버튼까지 그려진 프로세스를 기다린다
+        var cond = new PropertyCondition(AutomationElement.AutomationIdProperty, "settings");
+        for (int i = 0; i < 80; i++)
+        {
+            foreach (var x in Process.GetProcessesByName("IINA").Where(x => x.MainWindowHandle != IntPtr.Zero))
+            {
+                var w = AutomationElement.FromHandle(x.MainWindowHandle);
+                if (w.FindFirst(TreeScope.Descendants, cond) != null) { Front(x.MainWindowHandle); return w; }
+            }
+            await Task.Delay(250);
+        }
+        throw new SkipException("IINA 창(설정 버튼)이 20초 안에 안 뜸");
     }
 
     static double Probe(string f)
