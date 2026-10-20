@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>UI 이름표 Windows-MCP</title>
+<style>
+:root{--ink:#1f2328;--sub:#57606a;--line:#d0d7de;--bg:#f6f6f4;--card:#fbfbfa;--done:#1a7f37;--make:#e8590c;--p0:#6366f1;--p2:#1a7f37}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:"Pretendard","Malgun Gothic",sans-serif;color:var(--ink);width:1500px;padding:36px 44px}
+h1{font-size:30px;margin:0 0 6px}
+.lead{color:var(--sub);font-size:15px;margin:0 0 14px}
+.legend{display:flex;gap:18px;font-size:14px;margin-bottom:18px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+.stage{background:#fff;border:2px solid;border-radius:12px;padding:16px 20px;margin-bottom:6px}
+.stage h2{font-size:19px;margin:0 0 12px;display:flex;align-items:center;gap:10px}
+.tag{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px}
+.row{display:flex;align-items:stretch;gap:8px}
+.arrow{align-self:center;color:#8c959f;font-size:20px}
+.box{flex:1;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13.5px;line-height:1.55}
+.box b{font-size:14.5px;display:block;margin-bottom:3px}
+.box.done{border-left-color:var(--done)}
+.box.make{border-left-color:var(--make)}
+.box.you{border-left-color:#8c959f}
+code{font-family:Consolas,monospace;font-size:12.5px;background:#eef1f4;padding:1px 5px;border-radius:4px}
+.who{font-size:11.5px;font-weight:700;margin-top:6px;display:block}
+.who.done{color:var(--done)} .who.make{color:var(--make)} .who.you{color:var(--sub)}
+.between{text-align:center;color:#8c959f;font-size:22px;margin:6px 0}
+.center{background:#24292f;color:#fff;border-radius:12px;padding:16px 20px;margin-bottom:6px}
+.center h2{margin:0 0 12px;font-size:19px;color:#ffb86b}
+.mcps{display:flex;gap:14px}
+.mcp{flex:1;border-radius:8px;padding:12px 14px;font-size:13.5px;line-height:1.7}
+.mcp.done{background:#12361f;border:1px solid #2ea043}
+.mcp.make{background:#3d2312;border:1px solid #e8590c}
+.mcp h3{margin:0 0 6px;font-size:15px}
+.center code{background:#0d1117;color:#e6edf3}
+.quick{background:#fff8e6;border:1.5px dashed #d4a72c;border-radius:10px;padding:12px 16px;font-size:13.5px;line-height:1.6;margin:10px 0 6px}
+.foot{font-size:13px;color:var(--sub);line-height:1.7;margin-top:12px}
+.sum{display:flex;gap:14px;margin-top:10px}
+.sum div{flex:1;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:13.5px;line-height:1.6}
+</style></head><body>
+
+<h1>UI 이름표 — Windows-MCP 활용판 (Windows 데스크톱 앱)</h1>
+<p class="lead">원래 계획에서 <b>화면 읽기·찍기·앱 실행·같은 화면까지 이동</b>은 Windows-MCP에 맡기고, <b>사전·가리키기·대기열</b>만 직접 만든다</p>
+<div class="legend">
+  <span><i class="dot" style="background:var(--done)"></i>Windows-MCP가 이미 함</span>
+  <span><i class="dot" style="background:var(--make)"></i>직접 만들 것</span>
+  <span><i class="dot" style="background:#8c959f"></i>내가 함</span>
+</div>
+
+<div class="stage" style="border-color:var(--p0)">
+  <h2>0단계 · 부품 사전 만들기 <span class="tag" style="background:#eef0ff;color:var(--p0)">처음 한 번 + 코드 바뀌면 다시</span></h2>
+  <div class="row">
+    <div class="box you"><b>📁 내 앱 소스코드</b>WPF·WinUI: <code>.xaml</code><br>WinForms: <code>*.Designer.cs</code><span class="who you">내 프로젝트</span></div>
+    <div class="arrow">→</div>
+    <div class="box make"><b>🔍 build_catalog(project)</b>부품마다 <code>x:Name</code> / <code>Name</code> 뽑기<br>= 실행 중 UI Automation의 <b>AutomationId</b>와 같은 값<span class="who make">직접 · 파일 파싱 스크립트</span></div>
+    <div class="arrow">→</div>
+    <div class="box make"><b>🏷️ 표준 이름 붙이기</b><code>Button</code> → 버튼 / Button<br><code>Expander</code> → 아코디언 / Accordion<br>+ 코드 위치 <code>MainWindow.xaml:42</code><span class="who make">직접 · 종류→이름 표</span></div>
+    <div class="arrow">→</div>
+    <div class="box make"><b>📘 catalog.json + 사전 HTML</b>키: AutomationId<br>값: 한/영 이름 · 파일:줄 · 효과 설명<span class="who make">직접</span></div>
+  </div>
+</div>
+
+<div class="between">▼ 쓰다가 고치고 싶은 게 생김</div>
+
+<div class="stage" style="border-color:var(--make)">
+  <h2>1단계 · 내가 가리키기 <span class="tag" style="background:#fff1e6;color:var(--make)">선택 레이어 = 작은 상주 프로그램 (AI 아님)</span></h2>
+  <div class="row">
+    <div class="box you"><b>① 앱 켜고 고칠 화면까지 이동</b>아코디언 열기·오류 띄우기도 내가<span class="who you">나</span></div>
+    <div class="arrow">→</div>
+    <div class="box make"><b>② Ctrl+Shift+G</b>전역 단축키 → 투명 선택 레이어 켜짐<span class="who make">직접 · picker.exe</span></div>
+    <div class="arrow">→</div>
+    <div class="box make"><b>③ 마우스 아래 부품</b>UIA <code>ElementFromPoint</code> → AutomationId<br>→ 사전 조회 → 테두리 + "아코디언 · Main.xaml:42"<span class="who make">직접 · pywinauto / uiautomation</span></div>
+    <div class="arrow">→</div>
+    <div class="box make"><b>④ 클릭 + 메모</b>"간격 좁게" · 여러 개 가능<br>→ 부품 정보·메모·영역 캡처를 <code>picks.json</code>에 쌓음<span class="who make">직접</span></div>
+  </div>
+  <div class="quick">⚡ <b>picker 만들기 전 임시 방법 (지금 바로 가능)</b> — 고칠 부품에 마우스를 올려 두고 Claude에 "이거 간격 좁게" →
+  Windows-MCP <code>Screenshot</code>이 커서 위치를 알려 줌 → <code>Snapshot(region=커서 둘레)</code>로 그 부품의 이름·종류 읽기 → 사전이 없으니 코드 위치는 AI가 검색으로 찾음(느리고 틀릴 수 있음)</div>
+</div>
+
+<div class="between">▼ Claude에게 "고쳐"</div>
+
+<div class="center">
+  <h2>⚙️ 가운데: MCP 두 개를 같이 연결</h2>
+  <div class="mcps">
+    <div class="mcp done"><h3 style="color:#56d364">Windows-MCP (설치됨 · 그대로 씀)</h3>
+      <code>App</code> 앱 실행·창 전환 · <code>Snapshot</code> 부품 트리 읽기 · <code>Screenshot(region)</code> 수정 후 다시 찍기<br>
+      <code>Click</code> · <code>Type</code> · <code>WaitFor</code> 고친 뒤 <b>같은 화면·상태까지 AI가 다시 이동</b><br>
+      → 원래 계획의 <code>capture(target)</code>는 만들 필요 없음</div>
+    <div class="mcp make"><h3 style="color:#ffa657">UI 이름표 MCP (직접 · 작게)</h3>
+      <code>build_catalog(project)</code> 사전 만들기<br>
+      <code>get_picks()</code> 내가 고른 것 + 메모 + 캡처 가져오기<br>
+      <code>catalog_lookup(id 또는 이름)</code> AutomationId·이름 → 파일:줄</div>
+  </div>
+</div>
+
+<div class="between">▼</div>
+
+<div class="stage" style="border-color:var(--p2)">
+  <h2>2단계 · AI가 고치기 <span class="tag" style="background:#e6f6ea;color:var(--p2)">AI가 함</span></h2>
+  <div class="row">
+    <div class="box make"><b>① get_picks()</b>고른 부품 · 메모 · 그때 화면<span class="who make">이름표 MCP</span></div>
+    <div class="arrow">→</div>
+    <div class="box make"><b>② catalog_lookup()</b><code>FilterExpander</code> → <code>Main.xaml:42</code><span class="who make">이름표 MCP</span></div>
+    <div class="arrow">→</div>
+    <div class="box you"><b>③ 코드 수정 + 빌드</b><code>Margin="12"</code> → <code>"6"</code><br><code>dotnet build</code><span class="who you">Claude Code 기본 기능</span></div>
+    <div class="arrow">→</div>
+    <div class="box done"><b>④ 다시 실행 · 같은 화면으로</b><code>App</code> → <code>Click</code>·<code>WaitFor</code>로 아코디언 열기까지<span class="who done">Windows-MCP</span></div>
+    <div class="arrow">→</div>
+    <div class="box done"><b>⑤ 전후 비교 그림</b><code>Screenshot(region)</code> 전·후 나란히<br>→ 내가 보고 OK / 다시<span class="who done">Windows-MCP</span></div>
+  </div>
+</div>
+
+<div class="sum">
+  <div><b style="color:var(--done)">Windows-MCP로 줄어든 것</b><br>캡처 도구 · 앱 실행 · 고친 뒤 같은 상태로 이동하기(원래 계획엔 없던 기능)</div>
+  <div><b style="color:var(--make)">직접 만들 것 3개</b><br>① 사전 생성 스크립트 ② picker.exe(단축키·레이어·대기열) ③ 도구 3개짜리 작은 MCP</div>
+</div>
+
+<p class="foot">⚠ 약점: <code>x:Name</code>/<code>AutomationId</code>가 없는 부품(이름 없는 Panel·커스텀 그리기·Qt 일부)은 사전과 안 맞음 → 종류·글자·부모 경로로 추정해 정확도 떨어짐.<br>
+⚠ Windows-MCP의 Click·Type은 <b>실제 마우스·키보드</b>를 움직임 → AI가 ④를 하는 동안 PC를 쓰지 않기. 마우스를 크게 움직이면 제어권이 나에게 넘어옴.</p>
+</body></html>

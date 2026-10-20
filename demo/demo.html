@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>UI 이름표 데모</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;width:1280px;height:720px;overflow:hidden;background:#1d4e89 linear-gradient(135deg,#2a5d9b,#173e6e);font-family:"Pretendard","Malgun Gothic",sans-serif;position:relative}
+.badge{position:absolute;top:10px;right:14px;color:#cfe0f5;font-size:12px;opacity:.8}
+/* 가짜 Windows 앱 */
+.win{position:absolute;left:30px;top:40px;width:640px;height:560px;background:#f3f3f3;border-radius:8px;box-shadow:0 10px 40px #0006;overflow:hidden;transition:opacity .25s}
+.title{height:34px;background:#fff;display:flex;align-items:center;padding:0 12px;font-size:13px;color:#333;border-bottom:1px solid #e5e5e5}
+.title .ctl{margin-left:auto;letter-spacing:18px;color:#666}
+.body{padding:18px}
+h3{margin:0 0 12px;font-size:18px;color:#222}
+.exp{background:#fff;border:1px solid #ddd;border-radius:6px;margin-bottom:14px}
+.exp-h{padding:10px 14px;font-size:14px;font-weight:600;display:flex}
+.exp-h span{margin-left:auto;transition:transform .2s}
+.exp.open .exp-h span{transform:rotate(180deg)}
+.exp-b{height:0;overflow:hidden;transition:height .3s}
+.exp.open .exp-b{height:62px}
+.chips{display:flex;gap:var(--gap,12px);padding:4px 14px 14px;transition:gap .3s}
+.chip{padding:6px 12px;border-radius:999px;background:#e8eefc;color:#2453b3;font-size:13px}
+.list div{background:#fff;border:1px solid #e3e3e3;border-radius:6px;padding:11px 14px;margin-bottom:8px;font-size:14px;display:flex}
+.list b{margin-left:auto;color:#c0392b;font-weight:600}
+.btn{display:inline-block;background:#0067c0;color:#fff;padding:8px 16px;border-radius:5px;font-size:14px;margin-top:6px}
+/* 선택 레이어 */
+.layer{position:absolute;inset:0;background:#0067c014;display:none;border:3px solid #0067c0}
+.hl{position:absolute;border:2px solid #ff6a00;background:#ff6a0018;display:none;pointer-events:none;transition:all .18s}
+.tagl{position:absolute;background:#ff6a00;color:#fff;font-size:12px;padding:3px 8px;border-radius:4px;white-space:nowrap;display:none;font-weight:600}
+.memo{position:absolute;background:#fff;border:1px solid #ccc;border-radius:6px;box-shadow:0 6px 20px #0003;padding:8px;width:240px;display:none;font-size:13px}
+.memo input{width:100%;border:1px solid #0067c0;border-radius:4px;padding:6px;font:inherit}
+.queue{position:absolute;left:30px;top:610px;background:#ff6a00;color:#fff;font-size:13px;padding:5px 12px;border-radius:999px;display:none;font-weight:600}
+.key{position:absolute;left:250px;top:300px;background:#111d;color:#fff;font:600 26px Consolas,monospace;padding:14px 24px;border-radius:10px;display:none}
+/* Claude 터미널 */
+.term{position:absolute;right:30px;top:40px;width:560px;height:560px;background:#1e1e1e;border-radius:8px;box-shadow:0 10px 40px #0006;color:#ddd;font:13px/1.6 Consolas,"Malgun Gothic",monospace;padding:12px 14px;overflow:hidden}
+.term .hd{color:#d97757;font-weight:700;margin-bottom:8px}
+.term .u{color:#fff}.term .t{color:#d97757}.term .g{color:#7ee787}.term .r{color:#ff7b72}.term .d{color:#8b949e}
+/* 자막 */
+.cap{position:absolute;left:0;right:0;bottom:0;height:92px;background:#000c;color:#fff;display:flex;align-items:center;padding:0 34px;font-size:22px;font-weight:600}
+.cap small{display:block;font-size:14px;color:#bbb;font-weight:400;margin-top:4px}
+.step{background:#ff6a00;border-radius:6px;padding:4px 10px;margin-right:14px;font-size:18px}
+/* 커서 */
+.cur{position:absolute;width:22px;height:22px;left:400px;top:400px;transition:left .6s ease,top .6s ease;z-index:50}
+/* 전후 비교 */
+.cmp{position:absolute;left:30px;top:40px;width:1220px;height:560px;background:#fff;border-radius:8px;display:none;padding:20px;box-shadow:0 10px 40px #0006}
+.cmp h3{margin-bottom:16px}
+.cmpr{display:flex;gap:30px}
+.cmpr>div{flex:1;border:1px solid #ddd;border-radius:6px;padding:12px}
+.cmpr p{margin:0 0 8px;font-weight:700;font-size:14px}
+.ok{margin-top:24px;font-size:16px}
+.ok span{display:inline-block;padding:8px 18px;border-radius:6px;margin-right:10px;color:#fff}
+</style></head><body>
+<div class="badge">예시 화면 · 가짜 앱으로 흐름만 보여 줌 (실제 프로그램 아님)</div>
+
+<div class="win" id="win">
+  <div class="title">가계부 — Gagyebu<span class="ctl">–□✕</span></div>
+  <div class="body">
+    <h3>이번 달 지출</h3>
+    <div class="exp" id="exp"><div class="exp-h">필터<span>▾</span></div>
+      <div class="exp-b"><div class="chips" id="chips"><div class="chip">식비</div><div class="chip">교통</div><div class="chip">쇼핑</div><div class="chip">구독</div></div></div></div>
+    <div class="list"><div>점심 김밥<b>-6,500</b></div><div>지하철<b>-1,500</b></div><div>넷플릭스<b>-13,500</b></div><div>편의점<b>-4,200</b></div></div>
+    <div class="btn" id="add">+ 지출 추가</div>
+  </div>
+  <div class="layer" id="layer"></div>
+</div>
+<div class="hl" id="hl"></div><div class="tagl" id="tagl"></div>
+<div class="memo" id="memo">메모<input id="memoIn"></div>
+<div class="queue" id="queue">대기열 1</div>
+<div class="key" id="key">Ctrl + Shift + G</div>
+
+<div class="term" id="term"><div class="hd">✻ Claude Code</div><div id="out"></div></div>
+
+<div class="cmp" id="cmp"><h3>전후 비교 — 필터 칩 묶음 (FilterPanel.xaml:42)</h3>
+  <div class="cmpr"><div><p>전</p><div class="chips" style="--gap:12px"><div class="chip">식비</div><div class="chip">교통</div><div class="chip">쇼핑</div><div class="chip">구독</div></div></div>
+  <div><p>후</p><div class="chips" style="--gap:6px"><div class="chip">식비</div><div class="chip">교통</div><div class="chip">쇼핑</div><div class="chip">구독</div></div></div></div>
+  <div class="ok"><span style="background:#1a7f37">OK</span><span style="background:#888">다시</span> ← 내가 보고 고름</div>
+</div>
+
+<div class="cap" id="cap"></div>
+<svg class="cur" id="cur" viewBox="0 0 24 24"><path d="M3 2l7 19 2.5-7.5L20 11z" fill="#fff" stroke="#000" stroke-width="1.5"/></svg>
+
+<script>
+const $=id=>document.getElementById(id), wait=ms=>new Promise(r=>setTimeout(r,ms));
+const cap=(n,t,s)=>$('cap').innerHTML=`<span class="step">${n}</span><div>${t}<small>${s}</small></div>`;
+const move=async(el,dx=0.5,dy=0.5)=>{const b=el.getBoundingClientRect();$('cur').style.left=b.left+b.width*dx+'px';$('cur').style.top=b.top+b.height*dy+'px';await wait(700)};
+const show=(id,v=true)=>$(id).style.display=v?'block':'none';
+function hl(el,label){const b=el.getBoundingClientRect(),h=$('hl'),t=$('tagl');Object.assign(h.style,{left:b.left-3+'px',top:b.top-3+'px',width:b.width+6+'px',height:b.height+6+'px',display:'block'});t.textContent=label;Object.assign(t.style,{left:b.left-3+'px',top:b.top-26+'px',display:'block'})}
+async function line(html,ms=500){const d=document.createElement('div');d.innerHTML=html;$('out').appendChild(d);await wait(ms)}
+async function type(el,text,ms=70){for(const c of text){el.value!==undefined&&el.tagName==='INPUT'?el.value+=c:el.innerHTML+=c;await wait(ms)}}
+
+(async()=>{
+  await wait(400);
+  cap('①','앱을 평소처럼 쓰다가 고칠 곳 발견','필터를 열어 보니 칩 사이가 너무 넓다');
+  await move($('add'));await move($('exp').firstChild,0.2);$('exp').classList.add('open');await wait(1200);
+  cap('②','단축키로 선택 레이어 켜기','Ctrl+Shift+G → 투명 레이어 (picker.exe, AI 아님)');
+  show('key');await wait(1100);show('key',false);show('layer');await wait(500);
+  cap('③','마우스를 올리면 테두리 + 표준 이름 + 코드 위치','UI Automation으로 부품 읽기 → 부품 사전에서 이름 찾기');
+  await move($('add'));hl($('add'),'버튼 · Button · Main.xaml:31');await wait(1300);
+  await move(document.querySelector('.list div'));hl(document.querySelector('.list div'),'목록 항목 · List Item · Main.xaml:36');await wait(1300);
+  await move($('chips'),0.3);hl($('chips'),'칩 묶음 · Chip Group · FilterPanel.xaml:42');await wait(1400);
+  cap('④','클릭하고 메모 → 대기열에 쌓기','부품 정보 + 메모 + 그때 화면 캡처 → picks.json');
+  const b=$('chips').getBoundingClientRect();Object.assign($('memo').style,{left:b.left+'px',top:b.bottom+14+'px'});show('memo');
+  await type($('memoIn'),'칩 간격 좁게',110);await wait(500);show('memo',false);show('queue');show('layer',false);show('hl',false);show('tagl',false);await wait(1000);
+  cap('⑤','Claude에게 "고쳐" 한마디','이름표 MCP로 고른 것과 코드 위치를 가져옴');
+  await move($('term'),0.5,0.3);
+  const u=document.createElement('div');u.className='u';u.textContent='> ';$('out').appendChild(u);await type(u,'고른 거 고쳐줘',90);await wait(400);
+  await line('<span class="t">●</span> uinametag.<b>get_picks</b>()',300);
+  await line('<span class="d">  ⎿ 1개: Chip Group "칩 간격 좁게" + 캡처</span>',700);
+  await line('<span class="t">●</span> uinametag.<b>catalog_lookup</b>("FilterChips")',300);
+  await line('<span class="d">  ⎿ FilterPanel.xaml:42  WrapPanel</span>',700);
+  await line('<span class="t">●</span> Update(FilterPanel.xaml)',300);
+  await line('<span class="r">  - &lt;WrapPanel x:Name="FilterChips" ItemMargin="12"&gt;</span>',200);
+  await line('<span class="g">  + &lt;WrapPanel x:Name="FilterChips" ItemMargin="6"&gt;</span>',700);
+  await line('<span class="t">●</span> Bash(dotnet build)',300);
+  await line('<span class="g">  ⎿ 빌드 성공</span>',700);
+  cap('⑥','Windows-MCP로 다시 실행해 같은 화면까지 이동','App → Click("필터") → Screenshot(region)');
+  await line('<span class="t">●</span> windows-mcp.<b>App</b>("Gagyebu")',300);
+  $('win').style.opacity=0;$('exp').classList.remove('open');show('queue',false);await wait(500);$('win').style.opacity=1;await wait(500);
+  await line('<span class="t">●</span> windows-mcp.<b>Click</b>("필터")',300);
+  await move($('exp').firstChild,0.2);$('chips').style.setProperty('--gap','6px');$('exp').classList.add('open');await wait(900);
+  await line('<span class="t">●</span> windows-mcp.<b>Screenshot</b>(region=칩 묶음)',300);
+  hl($('chips'),'다시 찍음');await wait(1100);show('hl',false);show('tagl',false);
+  cap('⑦','전후 비교 그림 → 내가 보고 OK','"됐다"는 내가 확인한 뒤에만');
+  show('cmp');await move(document.querySelector('.ok span'));await wait(2500);
+  document.title='DONE';
+})();
+</script>
+</body></html>

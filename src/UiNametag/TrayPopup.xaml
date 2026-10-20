@@ -1,0 +1,86 @@
+<Window x:Class="UiNametag.TrayPopup"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="UiNametag 빠른 창" Width="360" SizeToContent="Height" WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True"
+        Foreground="{StaticResource Ink}" FontFamily="{StaticResource Font}" UseLayoutRounding="True">
+    <!-- 시안 C: Windows 11 빠른 설정처럼 트레이 위에 뜨는 작은 창. 자주 하는 일만, 나머지는 전체 창으로 -->
+    <Border x:Name="PopupFrame" Margin="12" Background="#1C1C1F" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="10" Padding="16">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.5"/>
+        </Border.Effect>
+        <StackPanel>
+            <!-- 머리: 이름 + 지금 상태 -->
+            <DockPanel>
+                <Border Width="34" Height="34" CornerRadius="8" Background="{StaticResource Accent}" VerticalAlignment="Center">
+                    <Path Data="M3,12 V3 H12 L21,12 L12,21 Z M7,7 h2 v2 h-2 Z" Stroke="White" StrokeThickness="1.8" StrokeLineJoin="Round" Width="18" Height="18" Stretch="Uniform"/>
+                </Border>
+                <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="PopupTitle" Text="UiNametag" FontSize="15" FontWeight="SemiBold"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                        <Ellipse x:Name="StatusDot" Width="7" Height="7" Fill="{StaticResource Ok}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="StatusText" Style="{StaticResource Sub}" Margin="6,0,0,0" Text="켜짐"/>
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+
+            <!-- 빠른 동작 타일 -->
+            <UniformGrid Columns="3" Margin="0,14,0,0">
+                <Button x:Name="PickTile" Style="{StaticResource Tile}" Margin="0,0,6,0" Click="PickTile_Click" ToolTip="부품 고르기 시작">
+                    <StackPanel>
+                        <TextBlock Text="⌖" FontSize="18" Foreground="{StaticResource Accent}"/>
+                        <TextBlock Text="부품 고르기" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                        <TextBlock x:Name="PickKeyText" Style="{StaticResource Sub}" Text="Ctrl+Shift+G"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="RecTile" Style="{StaticResource Tile}" Margin="3,0" Click="RecTile_Click" ToolTip="앞에 있는 앱 창 녹화 시작·끝">
+                    <StackPanel>
+                        <TextBlock Text="●" FontSize="18" Foreground="{StaticResource Bad}"/>
+                        <TextBlock x:Name="RecTileText" Text="녹화" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                        <TextBlock x:Name="RecKeyText" Style="{StaticResource Sub}" Text="Ctrl+Shift+R"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="QueueTile" Style="{StaticResource Tile}" Margin="6,0,0,0" Click="QueueTile_Click" ToolTip="고른 것·녹화 목록 보기">
+                    <StackPanel>
+                        <TextBlock x:Name="QueueCount" Text="0" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Accent}"/>
+                        <TextBlock Text="대기열" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                        <TextBlock x:Name="QueueSub" Style="{StaticResource Sub}" Text="안 가져간 것"/>
+                    </StackPanel>
+                </Button>
+            </UniformGrid>
+
+            <!-- 내 앱 (짧게) -->
+            <DockPanel Margin="0,18,0,6">
+                <Button x:Name="AddAppButton" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Padding="8,4" Content="＋ 새 앱 등록" Foreground="{StaticResource Accent}" Click="AddAppButton_Click"/>
+                <TextBlock Text="내 앱" Style="{StaticResource H}" FontSize="13" VerticalAlignment="Center"/>
+            </DockPanel>
+            <ItemsControl x:Name="PopupApps">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Style="{StaticResource Row}" Tag="{Binding}" Click="AppRow_Click" ToolTip="{Binding Source}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Kind}" Style="{StaticResource Sub}" VerticalAlignment="Center"/>
+                                <Ellipse Width="8" Height="8" Fill="{Binding Dot}" VerticalAlignment="Center"/>
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding Sub}" Style="{StaticResource Sub}"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock x:Name="PopupEmpty" Style="{StaticResource Sub}" Margin="10,4" Visibility="Collapsed"
+                       Text="아직 등록한 앱이 없어요. '새 앱 등록'으로 고칠 앱 창과 소스 폴더를 알려 주세요."/>
+            <TextBlock x:Name="MoreApps" Style="{StaticResource Sub}" Margin="10,2" Visibility="Collapsed"/>
+
+            <!-- 아래 줄 -->
+            <Border Height="1" Background="{StaticResource Line}" Margin="0,14,0,10"/>
+            <DockPanel>
+                <Button x:Name="QuitButton" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="끄기" Foreground="{StaticResource Muted}" Click="QuitButton_Click"/>
+                <Button x:Name="SettingsButton" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="설정" Click="SettingsButton_Click"/>
+                <Button x:Name="OpenMainButton" Style="{StaticResource Btn}" HorizontalAlignment="Left" Content="전체 창 열기" Click="OpenMainButton_Click"/>
+            </DockPanel>
+        </StackPanel>
+    </Border>
+</Window>

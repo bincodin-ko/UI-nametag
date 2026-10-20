@@ -1,0 +1,355 @@
+<Window x:Class="UiNametag.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="UiNametag" Width="960" Height="640" MinWidth="720" MinHeight="520"
+        Background="{StaticResource Bg}" Foreground="{StaticResource Ink}" FontFamily="{StaticResource Font}" FontSize="13" UseLayoutRounding="True"
+        WindowStartupLocation="CenterScreen">
+    <!-- 시안 A: 왼쪽 메뉴 + 목록 + 자세히 (마스터-디테일). 모든 부품에 x:Name → UiNametag가 자기 창도 사전으로 읽는다 -->
+    <Grid x:Name="Root">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- 왼쪽 메뉴 -->
+        <Border x:Name="SideBar" Background="{StaticResource Side}" BorderBrush="{StaticResource Line}" BorderThickness="0,0,1,0" Padding="12,16">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,0,0,18">
+                    <Border Width="26" Height="26" CornerRadius="6" Background="{StaticResource Accent}">
+                        <Path Data="M3,12 V3 H12 L21,12 L12,21 Z M7,7 h2 v2 h-2 Z" Stroke="White" StrokeThickness="1.8" StrokeLineJoin="Round" Width="14" Height="14" Stretch="Uniform"/>
+                    </Border>
+                    <TextBlock x:Name="BrandText" Text="UiNametag" FontSize="15" FontWeight="SemiBold" Margin="9,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Bottom">
+                    <Border Height="1" Background="{StaticResource Line}" Margin="0,0,0,10"/>
+                    <StackPanel Orientation="Horizontal" Margin="6,2">
+                        <Ellipse x:Name="ClaudeDot" Width="7" Height="7" VerticalAlignment="Center" Fill="{StaticResource Ok}"/>
+                        <TextBlock x:Name="ClaudeText" Style="{StaticResource Sub}" Margin="7,0,0,0" Text="Claude 연결됨"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="6,4">
+                        <Ellipse x:Name="PickerDot" Width="7" Height="7" VerticalAlignment="Center" Fill="{StaticResource Ok}"/>
+                        <TextBlock x:Name="PickerText" Style="{StaticResource Sub}" Margin="7,0,0,0" Text="켜짐 · Ctrl+Shift+G"/>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel>
+                    <RadioButton x:Name="NavApps" Style="{StaticResource Nav}" GroupName="nav" Checked="Nav_Checked">
+                        <DockPanel>
+                            <TextBlock x:Name="NavAppsCount" DockPanel.Dock="Right" Style="{StaticResource Sub}" Text="0"/>
+                            <TextBlock Text="내 앱"/>
+                        </DockPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="NavQueue" Style="{StaticResource Nav}" GroupName="nav" Checked="Nav_Checked">
+                        <DockPanel>
+                            <TextBlock x:Name="NavQueueCount" DockPanel.Dock="Right" Style="{StaticResource Sub}" Text="0"/>
+                            <TextBlock Text="대기열"/>
+                        </DockPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="NavSettings" Style="{StaticResource Nav}" GroupName="nav" Checked="Nav_Checked" Content="설정"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ① 내 앱 -->
+        <Grid x:Name="AppsPage" Grid.Column="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="270"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Border x:Name="AppsListPane" BorderBrush="{StaticResource Line}" BorderThickness="0,0,1,0">
+                <DockPanel Margin="12,16">
+                    <DockPanel DockPanel.Dock="Top" Margin="4,0,0,10">
+                        <Button x:Name="NewAppButton" DockPanel.Dock="Right" Style="{StaticResource Primary}" Padding="10,5" Content="＋ 새 앱" Click="NewAppButton_Click"/>
+                        <TextBlock Text="내 앱" Style="{StaticResource H}" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <ListBox x:Name="AppsList" SelectionChanged="AppsList_SelectionChanged" PreviewMouseLeftButtonDown="AppsList_PreviewMouseLeftButtonDown">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel>
+                                    <Border Width="30" Height="30" CornerRadius="6" Background="{StaticResource Card}" BorderBrush="{StaticResource Line}" BorderThickness="1">
+                                        <TextBlock Text="{Binding Initial}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel Margin="10,0,0,0">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="7" Height="7" Fill="{Binding Dot}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Sub}" Style="{StaticResource Sub}" Margin="6,0,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <ScrollViewer x:Name="DetailScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <Grid Margin="28,22">
+                    <!-- 빈 상태 -->
+                    <StackPanel x:Name="EmptyAppsPanel" MaxWidth="420" HorizontalAlignment="Left" Margin="0,40,0,0">
+                        <TextBlock Text="아직 등록한 앱이 없어요" FontSize="18" FontWeight="SemiBold"/>
+                        <TextBlock Style="{StaticResource Sub}" FontSize="13" Margin="0,8,0,16" Text="고칠 앱 창과 그 앱의 소스 폴더를 알려 주면, 화면 부품을 가리킬 때 코드 위치(파일:줄)가 나와요."/>
+                        <Button x:Name="RegisterFirstButton" Style="{StaticResource Primary}" HorizontalAlignment="Left" Content="첫 앱 등록하기" Click="NewAppButton_Click"/>
+                    </StackPanel>
+
+                    <!-- 앱 자세히 -->
+                    <StackPanel x:Name="AppDetail" Visibility="Collapsed">
+                        <DockPanel>
+                            <Border Width="44" Height="44" CornerRadius="8" Background="{StaticResource Card}" BorderBrush="{StaticResource Line}" BorderThickness="1">
+                                <TextBlock x:Name="DetailInitial" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock x:Name="DetailName" FontSize="20" FontWeight="SemiBold"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <Border CornerRadius="9" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="8,1">
+                                        <TextBlock x:Name="DetailKind" FontSize="11.5"/>
+                                    </Border>
+                                    <Border CornerRadius="9" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="8,1" Margin="6,0,0,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse x:Name="DetailDot" Width="7" Height="7" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="DetailStatus" FontSize="11.5" Margin="5,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </DockPanel>
+
+                        <Grid x:Name="DetailInfo" Margin="0,20,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="110"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Style="{StaticResource Sub}" FontSize="13" Margin="0,8" Text="실행 파일·주소"/>
+                            <TextBlock x:Name="DetailExe" Grid.Column="1" Margin="0,8" FontFamily="{StaticResource Mono}" FontSize="12"/>
+                            <TextBlock Grid.Row="1" Style="{StaticResource Sub}" FontSize="13" Margin="0,8" Text="소스 폴더"/>
+                            <TextBlock x:Name="DetailSource" Grid.Row="1" Grid.Column="1" Margin="0,8" FontFamily="{StaticResource Mono}" FontSize="12"/>
+                            <TextBlock Grid.Row="2" Style="{StaticResource Sub}" FontSize="13" Margin="0,8" Text="사전 항목"/>
+                            <TextBlock x:Name="DetailCount" Grid.Row="2" Grid.Column="1" Margin="0,8"/>
+                            <TextBlock Grid.Row="3" Style="{StaticResource Sub}" FontSize="13" Margin="0,8" Text="마지막 갱신"/>
+                            <TextBlock x:Name="DetailBuilt" Grid.Row="3" Grid.Column="1" Margin="0,8"/>
+                        </Grid>
+
+                        <!-- 오류·바뀜 안내 -->
+                        <Border x:Name="StatusHelp" Margin="0,12,0,0" CornerRadius="6" Padding="12,9" Background="#22D29922" BorderBrush="{StaticResource Warn}" BorderThickness="1" Visibility="Collapsed">
+                            <TextBlock x:Name="StatusHelpText"/>
+                        </Border>
+
+                        <!-- 만드는 중 -->
+                        <StackPanel x:Name="BuildingPanel" Margin="0,12,0,0" Visibility="Collapsed">
+                            <TextBlock x:Name="BuildingText" Style="{StaticResource Sub}" Text="사전 만드는 중…"/>
+                            <ProgressBar x:Name="BuildingBar" IsIndeterminate="True" Margin="0,6,0,0"/>
+                        </StackPanel>
+
+                        <!-- 사전 미리보기 -->
+                        <Border x:Name="EntriesBox" Margin="0,16,0,0" CornerRadius="8" BorderBrush="{StaticResource Line}" BorderThickness="1">
+                            <StackPanel>
+                                <DockPanel Margin="12,10">
+                                    <TextBlock x:Name="EntriesCount" DockPanel.Dock="Right" Style="{StaticResource Sub}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="사전 미리보기 (id → 파일:줄)" Style="{StaticResource Sub}" FontSize="13" VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <Grid Margin="12,0,12,8">
+                                    <TextBox x:Name="EntrySearch" TextChanged="EntrySearch_TextChanged" ToolTip="id 일부로 찾기"/>
+                                    <TextBlock x:Name="EntrySearchHint" Text="id 일부로 찾기 (예: settings)" Style="{StaticResource Sub}" FontSize="13" Margin="10,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                                </Grid>
+                                <ItemsControl x:Name="EntriesList" Margin="12,0,12,10">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Id}" FontFamily="{StaticResource Mono}" FontSize="12" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Where}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{StaticResource Muted}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <DockPanel Margin="0,16,0,0">
+                            <Button x:Name="DeleteAppButton" DockPanel.Dock="Right" Style="{StaticResource Danger}" Content="지우기" Click="DeleteAppButton_Click"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="RebuildButton" Style="{StaticResource Btn}" Content="사전 다시 만들기" Click="RebuildButton_Click"/>
+                                <Button x:Name="OpenSourceButton" Style="{StaticResource Btn}" Margin="8,0,0,0" Content="소스 폴더 열기" Click="OpenSourceButton_Click"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </StackPanel>
+
+                    <!-- 새 앱 등록 (3단계) -->
+                    <StackPanel x:Name="RegisterPanel" Visibility="Collapsed" MaxWidth="620" HorizontalAlignment="Left">
+                        <DockPanel>
+                            <Button x:Name="CancelRegisterButton" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="취소" Click="CancelRegisterButton_Click"/>
+                            <TextBlock Text="새 앱 등록" FontSize="20" FontWeight="SemiBold"/>
+                        </DockPanel>
+
+                        <TextBlock Text="① 고칠 앱 창" Style="{StaticResource H}" Margin="0,18,0,6"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="PickWindowButton" Style="{StaticResource Primary}" Content="화면에서 창 클릭" Click="PickWindowButton_Click"/>
+                            <Button x:Name="RefreshWindowsButton" Style="{StaticResource Btn}" Margin="8,0,0,0" Content="창 목록 새로고침" Click="RefreshWindowsButton_Click"/>
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Sub}" Margin="0,8,0,4" Text="또는 실행 중인 창에서 고르기"/>
+                        <ListBox x:Name="WindowsList" MaxHeight="150" SelectionChanged="WindowsList_SelectionChanged">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                        <TextBlock Text="{Binding Sub}" Style="{StaticResource Sub}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <TextBlock x:Name="ChosenWindowText" Style="{StaticResource Sub}" Margin="0,8,0,0" Text="아직 고른 창 없음"/>
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Sub}" Text="이름"/>
+                                <TextBox x:Name="AppNameBox" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource Sub}" Text="웹사이트면 주소 (선택)"/>
+                                <TextBox x:Name="WebUrlBox" Margin="0,4,0,0" ToolTip="예: http://localhost:5173"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="② 소스 폴더" Style="{StaticResource H}" Margin="0,22,0,6"/>
+                        <DockPanel>
+                            <Button x:Name="BrowseButton" DockPanel.Dock="Right" Style="{StaticResource Btn}" Margin="8,0,0,0" Content="찾아보기" Click="BrowseButton_Click"/>
+                            <TextBox x:Name="SourceBox" TextChanged="SourceBox_TextChanged"/>
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource Sub}" Margin="0,8,0,4" Text="추천 폴더"/>
+                        <ItemsControl x:Name="SuggestList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource Row}" Padding="8,5" Tag="{Binding}" Click="Suggest_Click">
+                                        <TextBlock Text="{Binding}" FontFamily="{StaticResource Mono}" FontSize="12" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="③ 사전 만들기" Style="{StaticResource H}" Margin="0,22,0,6"/>
+                        <TextBlock Style="{StaticResource Sub}" Text="소스에서 .html·.jsx·.tsx·.vue·.svelte의 id, .xaml의 x:Name, WinForms Name을 읽어 부품 이름표 목록을 만들어요."/>
+                        <Button x:Name="BuildButton" Style="{StaticResource Primary}" HorizontalAlignment="Left" Margin="0,10,0,0" Content="사전 만들고 등록" Click="BuildButton_Click"/>
+                        <ProgressBar x:Name="RegisterBar" IsIndeterminate="True" Margin="0,10,0,0" Visibility="Collapsed"/>
+                        <TextBlock x:Name="RegisterError" Foreground="{StaticResource Bad}" Margin="0,8,0,0" Visibility="Collapsed"/>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ② 대기열 -->
+        <ScrollViewer x:Name="QueuePage" Grid.Column="1" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+            <StackPanel Margin="28,22" MaxWidth="760" HorizontalAlignment="Left">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button x:Name="AskClaudeButton" Style="{StaticResource Primary}" Margin="0,0,8,0" Content="Claude에게 고치게 하기" Click="AskClaudeButton_Click" ToolTip="새 터미널에서 Claude Code를 켜고 대기열을 가져가 고치게 합니다"/>
+                        <Button x:Name="ClearTakenButton" Style="{StaticResource Btn}" Content="고친 것 지우기" Click="ClearTakenButton_Click"/>
+                        <Button x:Name="OpenQueueFolderButton" Style="{StaticResource Btn}" Margin="8,0,0,0" Content="폴더 열기" Click="OpenDataDirButton_Click"/>
+                    </StackPanel>
+                    <TextBlock Text="대기열" FontSize="20" FontWeight="SemiBold"/>
+                </DockPanel>
+                <TextBlock x:Name="QueueHint" Style="{StaticResource Sub}" Margin="0,4,0,0" Text="'Claude에게 고치게 하기'를 누르면 Claude Code가 새 창에서 대기열을 가져가 고치고, 고친 것은 '✓ 고침 완료'로 바뀌어요."/>
+
+                <TextBlock Text="고른 부품" Style="{StaticResource H}" Margin="0,20,0,6"/>
+                <TextBlock x:Name="PicksEmpty" Style="{StaticResource Sub}" Text="아직 고른 부품이 없어요. Ctrl+Shift+G로 앱 부품을 골라 메모하거나, Ctrl+Shift+S로 화면 일부를 찍어 보내세요." Visibility="Collapsed"/>
+                <ItemsControl x:Name="PicksList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,10">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="지우기" Foreground="{StaticResource Muted}" VerticalAlignment="Top" Tag="{Binding}" Click="DeletePick_Click"/>
+                                    <Button DockPanel.Dock="Left" Style="{StaticResource Row}" Padding="0" Margin="0,0,14,0" VerticalAlignment="Top" Visibility="{Binding ThumbVis}" Tag="{Binding}" Click="Thumb_Click" ToolTip="누르면 크게 보기">
+                                        <Border Width="140" MaxHeight="100" CornerRadius="4" BorderBrush="{StaticResource Line}" BorderThickness="1" ClipToBounds="True">
+                                            <Image Source="{Binding Thumb}" Stretch="Uniform"/>
+                                        </Border>
+                                    </Button>
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Head}" Style="{StaticResource Sub}"/>
+                                            <TextBlock Text="{Binding Taken}" FontSize="12" Margin="10,0,0,0" Foreground="{Binding TakenBrush}"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Label}" FontFamily="{StaticResource Mono}" FontSize="12" Margin="0,3,0,0"/>
+                                        <TextBlock Text="{Binding Memo}" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="녹화" Style="{StaticResource H}" Margin="0,24,0,6"/>
+                <TextBlock x:Name="RecsEmpty" Style="{StaticResource Sub}" Text="보낸 녹화가 없어요. 앱 창을 누른 뒤 Ctrl+Shift+R로 녹화를 시작·끝내요." Visibility="Collapsed"/>
+                <ItemsControl x:Name="RecsList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,10">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="지우기" Foreground="{StaticResource Muted}" VerticalAlignment="Top" Tag="{Binding}" Click="DeleteRec_Click"/>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Head}" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding Window}" Style="{StaticResource Sub}" Margin="0,2,0,0"/>
+                                        <TextBlock Text="{Binding Memo}" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ③ 설정 -->
+        <ScrollViewer x:Name="SettingsPage" Grid.Column="1" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+            <StackPanel Margin="28,22" MaxWidth="620" HorizontalAlignment="Left">
+                <TextBlock Text="설정" FontSize="20" FontWeight="SemiBold"/>
+
+                <TextBlock Text="단축키" Style="{StaticResource H}" Margin="0,20,0,8"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Width="110" VerticalAlignment="Center" Text="부품 고르기"/>
+                    <TextBlock VerticalAlignment="Center" Foreground="{StaticResource Muted}" Text="Ctrl + Shift + "/>
+                    <TextBox x:Name="PickKeyBox" Width="44" MaxLength="1" CharacterCasing="Upper" HorizontalContentAlignment="Center" Margin="6,0,0,0"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Width="110" VerticalAlignment="Center" Text="녹화"/>
+                    <TextBlock VerticalAlignment="Center" Foreground="{StaticResource Muted}" Text="Ctrl + Shift + "/>
+                    <TextBox x:Name="RecKeyBox" Width="44" MaxLength="1" CharacterCasing="Upper" HorizontalContentAlignment="Center" Margin="6,0,0,0"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                    <TextBlock Width="110" VerticalAlignment="Center" Text="화면 영역 캡처"/>
+                    <TextBlock VerticalAlignment="Center" Foreground="{StaticResource Muted}" Text="Ctrl + Shift + "/>
+                    <TextBox x:Name="ShotKeyBox" Width="44" MaxLength="1" CharacterCasing="Upper" HorizontalContentAlignment="Center" Margin="6,0,0,0"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <Button x:Name="SaveKeysButton" Style="{StaticResource Btn}" Content="단축키 적용" Click="SaveKeysButton_Click"/>
+                    <TextBlock x:Name="KeysResult" Style="{StaticResource Sub}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <TextBlock Text="시작" Style="{StaticResource H}" Margin="0,24,0,8"/>
+                <CheckBox x:Name="AutostartSwitch" Style="{StaticResource Switch}" Content="Windows 켤 때 같이 켜기" Click="AutostartSwitch_Click"/>
+
+                <TextBlock Text="Claude 연결 (MCP)" Style="{StaticResource H}" Margin="0,24,0,8"/>
+                <TextBlock x:Name="ClaudeStateText" Margin="0,0,0,8"/>
+                <DockPanel>
+                    <Button x:Name="CopyMcpButton" DockPanel.Dock="Right" Style="{StaticResource Btn}" Margin="8,0,0,0" Content="복사" Click="CopyMcpButton_Click"/>
+                    <TextBox x:Name="McpCommandBox" IsReadOnly="True" FontFamily="{StaticResource Mono}" FontSize="12"/>
+                </DockPanel>
+                <TextBlock Style="{StaticResource Sub}" Margin="0,6,0,0" Text="Claude Code 터미널에 붙여 넣고 실행한 뒤 /mcp 로 다시 연결하세요. 이미 등록돼 있으면 다시 할 필요 없어요."/>
+
+                <TextBlock Text="데이터 폴더" Style="{StaticResource H}" Margin="0,24,0,8"/>
+                <DockPanel>
+                    <Button x:Name="OpenDataDirButton" DockPanel.Dock="Right" Style="{StaticResource Btn}" Margin="8,0,0,0" Content="열기" Click="OpenDataDirButton_Click"/>
+                    <TextBlock x:Name="DataDirText" FontFamily="{StaticResource Mono}" FontSize="12" VerticalAlignment="Center"/>
+                </DockPanel>
+                <TextBlock Style="{StaticResource Sub}" Margin="0,6,0,0" Text="앱 목록(apps.json)·앱별 사전(catalogs)·대기열(picks.json)·녹화가 여기에 있어요."/>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>

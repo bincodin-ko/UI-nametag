@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UiNametag 시안 A 마스터디테일</title>
+<style>
+:root {
+  /* ─── Surface ──────────────────────────────────────────────────── */
+  --bg:           #08090a;              /* marketing black — hero canvas */
+  --surface:      #191a1b;              /* elevated surface — cards, dropdowns */
+  --surface-warm: var(--surface);       /* no warm tier in dark achromatic system */
+
+  /* ─── Foreground ───────────────────────────────────────────────── */
+  --fg:   #f7f8f8;                      /* near-white primary text */
+  --fg-2: #d0d6e0;                      /* silver-gray body / secondary text */
+  --muted: #8a8f98;                     /* tertiary — placeholders, metadata */
+  --meta:  #62666d;                     /* quaternary — timestamps, disabled */
+
+  /* ─── Border ───────────────────────────────────────────────────── */
+  --border:      rgba(255, 255, 255, 0.08);   /* standard semi-transparent white */
+  --border-soft: rgba(255, 255, 255, 0.05);   /* ultra-subtle divider */
+
+  /* ─── Accent ───────────────────────────────────────────────────── */
+  --accent:        #5e6ad2;             /* brand indigo — CTA backgrounds */
+  --accent-on:     #ffffff;
+  --accent-hover:  #828fff;             /* lighter saturated hover */
+  --accent-active: #4752c4;             /* darker pressed state */
+
+  /* ─── Semantic ─────────────────────────────────────────────────── */
+  --success: #27a644;                   /* Linear green */
+  --warn:    #eab308;
+  --danger:  #dc2626;
+
+  /* ─── Typography ───────────────────────────────────────────────── */
+  --font-display: "Inter Variable", "Inter", "SF Pro Display", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-body:    "Inter Variable", "Inter", "SF Pro Display", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono:    "Berkeley Mono", ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  /* Type scale — DESIGN.md §Typography Hierarchy.
+   * Linear's display range 72px→10px; the 8 schema slots map the
+   * key stops. 64px secondary-hero lives inline in components.html. */
+  --text-xs:   12px;                    /* label / micro */
+  --text-sm:   14px;                    /* caption large / link small */
+  --text-base: 16px;                    /* body — standard reading */
+  --text-lg:   18px;                    /* body large — feature descriptions */
+  --text-xl:   24px;                    /* heading 2 */
+  --text-2xl:  32px;                    /* heading 1 */
+  --text-3xl:  48px;                    /* display — section headlines */
+  --text-4xl:  72px;                    /* display XL — hero */
+
+  /* Leading + tracking.
+   * --leading-tight=1.00: Linear's signature "engineered" compression.
+   * h2 (32px) → 1.13; h3 (24px) → 1.33 per DESIGN.md spec.
+   * --tracking-display: -0.022em = -1.584px / 72px normalized. */
+  --leading-body:     1.5;
+  --leading-tight:    1.00;
+  --tracking-display: -0.022em;
+
+  /* ─── Spacing ──────────────────────────────────────────────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-12: 48px;
+
+  /* Section rhythm — DESIGN.md §Whitespace Philosophy. */
+  --section-y-desktop: 80px;
+  --section-y-tablet:  48px;
+  --section-y-phone:   32px;
+
+  /* ─── Radius ───────────────────────────────────────────────────── */
+  /* 6px for buttons/inputs (comfortable), 8px cards, 12px panels. */
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-pill: 9999px;
+
+  /* ─── Elevation ────────────────────────────────────────────────── */
+  /* On dark surfaces: luminance stepping, not opaque drop shadows.
+     --elev-raised uses semi-transparent border-as-shadow technique. */
+  --elev-flat:   none;
+  --elev-ring:   0 0 0 1px var(--border);
+  --elev-raised:
+    rgba(0, 0, 0, 0.4) 0px 2px 4px,
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  /* ─── Focus ────────────────────────────────────────────────────── */
+  /* Multi-layer stack per DESIGN.md §6 + §7: accent ring makes the
+     indicator visible on the near-black #08090a canvas. */
+  --focus-ring:
+    0 0 0 2px color-mix(in oklab, var(--accent), transparent 30%),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+
+  /* ─── Motion ───────────────────────────────────────────────────── */
+  --motion-fast:   150ms;
+  --motion-base:   200ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ─── Layout ───────────────────────────────────────────────────── */
+  --container-max:            1200px;
+  --container-gutter-desktop: 24px;
+  --container-gutter-tablet:  16px;
+  --container-gutter-phone:   12px;
+}
+
+</style>
+<style>
+/* 브랜드 보조 토큰 (brief.md 지정색). 인디고는 눌러야 하는 곳에만, 주황은 로고에만, 빨강은 녹화에만 쓴다. */
+:root{
+  --brand:#ff6a00; --rec:#e5534b;
+  --panel:#0f1011; --surface-2:#28282c;
+  --hover:rgba(255,255,255,.05); --sel:rgba(255,255,255,.07);
+  --font-ko:"Inter Variable","Inter","Segoe UI Variable","Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:#050506;color:var(--fg-2);font:400 13px/1.5 var(--font-ko);font-feature-settings:"cv01","ss03";
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;overflow:hidden;
+  -webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit;font-feature-settings:inherit}
+button{cursor:pointer}
+:focus-visible{outline:none;box-shadow:var(--focus-ring);border-radius:var(--radius-sm)}
+.mono{font-family:var(--font-mono);font-size:12px}
+svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* 상태 미리보기 (창 밖) */
+.preview{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}
+.seg{display:flex;padding:2px;border:1px solid var(--border);border-radius:var(--radius-sm);background:rgba(255,255,255,.02)}
+.seg button{border:0;background:transparent;padding:3px 12px;border-radius:4px;color:var(--muted);font-weight:510;font-size:12px}
+.seg button[aria-pressed=true]{background:var(--surface-2);color:var(--fg)}
+.seg button:hover{color:var(--fg)}
+
+/* 창 */
+.win{width:min(960px,100%);height:min(640px,calc(100vh - 60px));background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);
+  display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--elev-raised);container-type:inline-size}
+.title{height:34px;flex:none;display:flex;align-items:center;gap:8px;padding-left:12px;background:var(--panel);border-bottom:1px solid var(--border-soft);font-size:12px;color:var(--muted)}
+.title .t{flex:1}
+.wc{display:flex;height:100%}
+.wc span{width:44px;display:grid;place-items:center;color:var(--muted)}
+.wc span:last-child:hover{background:var(--danger);color:#fff}
+.wc span:hover{background:var(--hover)}
+.logo{width:16px;height:16px;flex:none}
+.body{flex:1;display:flex;min-height:0}
+
+/* 왼쪽 탐색 */
+nav{width:184px;flex:none;background:var(--panel);border-right:1px solid var(--border-soft);padding:14px 10px;display:flex;flex-direction:column;gap:2px}
+.brand{display:flex;align-items:center;gap:8px;padding:2px 8px 14px;color:var(--fg);font-weight:590;font-size:14px;letter-spacing:-.01em}
+nav .n{display:flex;align-items:center;gap:10px;padding:7px 10px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--fg-2);font-weight:510;font-size:13px;text-align:left;width:100%}
+nav .n:hover{background:var(--hover)}
+nav .n[aria-current=page]{background:var(--sel);color:var(--fg)}
+nav .n .c{margin-left:auto;font-size:11px;color:var(--muted);background:rgba(255,255,255,.06);border-radius:var(--radius-pill);padding:0 7px;min-width:20px;text-align:center}
+nav .grow{flex:1}
+.conn{display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:12px;color:var(--muted);border-top:1px solid var(--border-soft)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--success);flex:none}
+.dot.acc{background:var(--accent-hover)} .dot.off{background:var(--meta)} .dot.warn{background:var(--warn)} .dot.err{background:var(--danger)} .dot.rec{background:var(--rec)}
+
+/* 내용 */
+main{flex:1;min-width:0;display:flex}
+.pane{flex:1;min-width:0;overflow:auto;padding:24px 28px}
+h1{font-size:20px;font-weight:590;color:var(--fg);letter-spacing:-.24px;line-height:1.3}
+h2{font-size:14px;font-weight:590;color:var(--fg);letter-spacing:-.01em}
+.sub{color:var(--muted);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--fg);font-weight:510;font-size:13px;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.07)}
+.btn.primary{background:var(--accent);border-color:transparent;color:var(--accent-on)}
+.btn.primary:hover{background:var(--accent-hover)}
+.btn.primary:active{background:var(--accent-active)}
+.btn.danger{color:#f0908f}
+.btn[disabled]{opacity:.4;cursor:not-allowed;pointer-events:none}
+.pill{display:inline-flex;align-items:center;gap:6px;height:20px;padding:0 8px;border-radius:var(--radius-pill);border:1px solid var(--border);font-size:11px;font-weight:510;color:var(--fg-2);white-space:nowrap}
+kbd{font:510 11px var(--font-mono);padding:1px 6px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--fg-2)}
+
+/* 상태 화면 */
+.hero{display:flex;align-items:center;gap:16px;padding:20px 0 22px;border-bottom:1px solid var(--border-soft)}
+.hero .big{font-size:32px;line-height:1.13;font-weight:400;letter-spacing:-.704px;color:var(--fg)}
+.sw{margin-left:auto;width:36px;height:20px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.08);position:relative;padding:0}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:transform var(--motion-fast) var(--ease-standard)}
+.sw[aria-checked=true]{background:var(--accent);border-color:transparent}
+.sw[aria-checked=true]::after{transform:translateX(16px);background:#fff}
+.rows{margin-top:6px}
+.row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border-soft)}
+.row .ic{width:32px;height:32px;border-radius:var(--radius-md);background:rgba(255,255,255,.04);border:1px solid var(--border-soft);display:grid;place-items:center;color:var(--fg-2);flex:none}
+.row .k{width:132px;color:var(--fg);font-weight:510}
+.row .v{flex:1;color:var(--fg-2)}
+.row .r{margin-left:auto;color:var(--muted);font-size:12px}
+.note{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(255,255,255,.02);margin-top:18px}
+.note.err{border-color:rgba(220,38,38,.45);background:rgba(220,38,38,.07)}
+.note.warn{border-color:rgba(234,179,8,.4);background:rgba(234,179,8,.06)}
+.note b{color:var(--fg);font-weight:590}
+.note .ic2{margin-top:2px}
+.note.err .ic2{color:#f0908f} .note.warn .ic2{color:var(--warn)}
+.note .btn{margin-left:auto;align-self:center}
+
+/* 내 앱: 목록 + 상세 */
+.list{width:252px;flex:none;border-right:1px solid var(--border-soft);display:flex;flex-direction:column}
+.list .hd{display:flex;align-items:center;justify-content:space-between;padding:20px 16px 12px}
+.list ul{list-style:none;padding:0 8px;display:flex;flex-direction:column;gap:2px;overflow:auto}
+.item{display:flex;gap:10px;align-items:center;width:100%;padding:9px 10px;border:0;border-radius:var(--radius-md);background:transparent;text-align:left}
+.item:hover{background:var(--hover)}
+.item[aria-selected=true]{background:var(--sel)}
+.tile{width:32px;height:32px;border-radius:var(--radius-md);display:grid;place-items:center;background:var(--surface-2);color:var(--fg);font-weight:590;font-size:13px;flex:none}
+.item .nm{color:var(--fg);font-weight:510;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .st{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;line-height:1.4}
+.item>div{min-width:0}
+.detail{flex:1;min-width:0;overflow:auto;padding:24px 28px}
+.dh{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.dh .tile{width:40px;height:40px;font-size:16px}
+.dl{margin-top:18px;border-top:1px solid var(--border-soft)}
+.dl div{display:flex;gap:16px;padding:9px 0;border-bottom:1px solid var(--border-soft)}
+.dl dt{width:92px;flex:none;color:var(--muted)}
+.dl dd{flex:1;min-width:0;color:var(--fg-2);word-break:break-all}
+.acts{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+.acts .btn.danger{margin-left:auto}
+.code{margin-top:18px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(255,255,255,.02);overflow:hidden}
+.code .ch{padding:8px 12px;border-bottom:1px solid var(--border-soft);color:var(--muted);font-size:12px;display:flex;justify-content:space-between}
+.code .ln{display:flex;gap:10px;padding:5px 12px;border-bottom:1px solid var(--border-soft)}
+.code .ln:last-child{border:0}
+.code .ln span:first-child{color:var(--fg);width:150px;flex:none}
+.code .ln span:last-child{color:var(--muted)}
+.bar{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:12px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .3s var(--ease-standard)}
+.sk{height:30px;border-radius:var(--radius-sm);background:linear-gradient(90deg,rgba(255,255,255,.03),rgba(255,255,255,.07),rgba(255,255,255,.03));background-size:200% 100%;animation:sh 1.4s linear infinite;margin-top:6px}
+@keyframes sh{to{background-position:-200% 0}}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.15);border-top-color:var(--accent-hover);animation:rot .8s linear infinite;flex:none}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* 빈 상태 */
+.empty{max-width:420px;margin:56px auto 0;text-align:left}
+.empty .big{font-size:24px;line-height:1.33;letter-spacing:-.288px;color:var(--fg);margin-bottom:8px}
+.empty ol{margin:14px 0 20px;padding-left:18px;color:var(--fg-2)}
+.empty li{padding:2px 0}
+
+/* 등록 3단계 */
+.back{display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:var(--muted);padding:0;margin-bottom:10px;font-weight:510}
+.back:hover{color:var(--fg)}
+.steps{display:flex;gap:0;margin:18px 0 20px;list-style:none;padding:0}
+.steps li{flex:1;display:flex;align-items:center;gap:10px;padding:10px 0;border-top:2px solid var(--border);color:var(--muted);font-weight:510;margin-right:12px}
+.steps li:last-child{margin-right:0}
+.steps li .no{width:20px;height:20px;border-radius:50%;border:1px solid var(--border);display:grid;place-items:center;font-size:11px}
+.steps li.on{border-color:var(--accent-hover);color:var(--fg)}
+.steps li.on .no{background:var(--accent);border-color:transparent;color:#fff}
+.steps li.done{border-color:var(--success);color:var(--fg-2)}
+.steps li.done .no{background:var(--success);border-color:transparent;color:#fff}
+.opt{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(255,255,255,.02);text-align:left;margin-top:6px}
+.opt:hover{background:rgba(255,255,255,.05)}
+.opt[aria-checked=true]{border-color:var(--accent-hover);background:rgba(94,106,210,.12)}
+.opt .rd{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--muted);flex:none;display:grid;place-items:center}
+.opt[aria-checked=true] .rd{border-color:var(--accent-hover)}
+.opt[aria-checked=true] .rd::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent-hover)}
+.opt .a{color:var(--fg);font-weight:510}
+.opt .b{color:var(--muted);font-size:12px;word-break:break-all}
+.lbl{display:block;margin:18px 0 4px;color:var(--fg);font-weight:510}
+.inp{display:flex;gap:8px}
+.inp input{flex:1;min-width:0;height:32px;padding:0 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,.02);color:var(--fg)}
+.inp input::placeholder{color:var(--meta)}
+.foot{display:flex;justify-content:space-between;margin-top:22px}
+
+/* 표 */
+table{width:100%;border-collapse:collapse;margin-top:10px;table-layout:fixed}
+th{text-align:left;font-weight:510;color:var(--muted);font-size:12px;padding:6px 8px;border-bottom:1px solid var(--border)}
+td{padding:10px 8px;border-bottom:1px solid var(--border-soft);vertical-align:top}
+td .p{color:var(--fg);font-weight:510;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} td .s{color:var(--muted);font-size:12px;font-family:var(--font-mono)}
+.ib{width:28px;height:28px;display:grid;place-items:center;border:0;background:transparent;color:var(--muted);border-radius:var(--radius-sm)}
+.ib:hover{background:var(--hover);color:var(--fg)}
+h2.sec{margin-top:26px;display:flex;align-items:center;gap:8px}
+
+/* 설정 */
+.sub+.set{margin-top:12px}
+.set{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--border-soft)}
+.set .l{flex:1} .set .l b{display:block;color:var(--fg);font-weight:510} .set .l span{color:var(--muted);font-size:12px}
+.sel{height:30px;padding:0 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--fg)}
+.cmd{display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 8px 8px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:rgba(255,255,255,.02)}
+.cmd code{flex:1;font:12px var(--font-mono);color:var(--fg-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* 창을 줄였을 때 (720x520 근처) */
+@container (max-width:800px){
+  nav{width:52px;padding:14px 6px;align-items:center}
+  nav .n{justify-content:center;padding:8px}
+  nav .n span.t2,nav .n .c,.brand span,.conn span{display:none}
+  .brand{padding:2px 0 14px}.conn{padding:8px 0}
+  .list{width:200px}
+  .pane,.detail{padding:20px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="tag" viewBox="0 0 16 16"><rect x="1" y="3" width="14" height="10" rx="2.5" fill="#ff6a00"/><circle cx="4.6" cy="8" r="1.1" fill="#08090a"/><rect x="7" y="6.2" width="5.5" height="1.3" rx=".6" fill="#08090a"/><rect x="7" y="8.7" width="3.6" height="1.3" rx=".6" fill="#08090a"/></symbol>
+    <symbol id="i-status" viewBox="0 0 16 16"><path d="M2 8h2.5l1.5-4 3 8 1.5-4H14"/></symbol>
+    <symbol id="i-apps" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></symbol>
+    <symbol id="i-queue" viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h7"/></symbol>
+    <symbol id="i-set" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+    <symbol id="i-back" viewBox="0 0 16 16"><path d="M10 3L5 8l5 5"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 16 16"><path d="M2 4.5A1.5 1.5 0 013.5 3H6l1.5 1.8h5A1.5 1.5 0 0114 6.3v5.2a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 11.5z"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 16 16"><path d="M13 3v3.5H9.5"/><path d="M13 6.5A5.5 5.5 0 102.8 9"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2L1.5 13.5h13z"/><path d="M8 6.5v3.2M8 11.6v.1"/></symbol>
+    <symbol id="i-pick" viewBox="0 0 16 16"><path d="M2.5 2.5l4.2 10.5 1.6-4.4L12.7 7z"/></symbol>
+    <symbol id="i-rec" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/></symbol>
+    <symbol id="i-plug" viewBox="0 0 16 16"><path d="M6 2v3M10 2v3M4 5h8v2.5a4 4 0 01-8 0zM8 11.5V14"/></symbol>
+    <symbol id="i-list" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 6.5h12"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 16 16"><rect x="5" y="5" width="8" height="8.5" rx="1.5"/><path d="M3 10.5V4a1.5 1.5 0 011.5-1.5H10"/></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3L13 4.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+  </defs>
+</svg>
+
+<div class="preview" role="group" aria-label="상태 미리보기">
+  <span>상태 미리보기</span>
+  <div class="seg" id="seg">
+    <button data-s="ok" aria-pressed="true">정상</button>
+    <button data-s="empty" aria-pressed="false">빈 상태</button>
+    <button data-s="loading" aria-pressed="false">로딩</button>
+    <button data-s="error" aria-pressed="false">오류</button>
+  </div>
+</div>
+
+<div class="win" role="application" aria-label="UiNametag 메인 창">
+  <div class="title">
+    <svg class="logo"><use href="#tag"/></svg><span class="t">UiNametag</span>
+    <div class="wc" aria-hidden="true">
+      <span><svg class="i"><use href="#i-set" style="display:none"/><path d="M3 8h10"/></svg></span>
+      <span><svg class="i"><rect x="3.5" y="3.5" width="9" height="9" rx="1"/></svg></span>
+      <span><svg class="i"><use href="#i-x"/></svg></span>
+    </div>
+  </div>
+  <div class="body">
+    <nav aria-label="메뉴" id="nav"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const ic=(n,c='')=>`<svg class="i ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const IINA={id:'iina',name:'IINA',kind:'Electron',exe:'C:\\Users\\gusql\\AppData\\Local\\Programs\\IINA\\IINA.exe',src:'C:\\Users\\gusql\\Desktop\\iina\\src',n:216,at:'2026-10-20 16:45'};
+const WEB={id:'web',name:'localhost:5173',kind:'웹사이트',exe:'http://localhost:5173',src:'C:\\Users\\gusql\\Desktop\\myweb\\src',n:58,at:'2026-10-20 11:20'};
+const PREVIEW=[['welcome.settingBtn','renderer/welcome.html:50'],['welcome.searchInput','renderer/welcome.html:62'],['player.playButton','renderer/player.js:118'],['playlist.row','renderer/playlist.js:34']];
+const ST={ok:'정상',stale:'소스 바뀜',missing:'폴더 없음',zero:'사전 0개',loading:'만드는 중'};
+const DOT={ok:'',stale:'warn',missing:'err',zero:'err',loading:'acc'};
+let S={state:'ok',view:'status',sel:'iina',step:0,pick:null,folder:null,built:null,on:true};
+const QUEUE=[
+ {n:1,app:'IINA',part:'Button',act:'메모',memo:'설정 톱니 더 크게',loc:'renderer/welcome.html:50',got:true},
+ {n:2,app:'IINA',part:'Input',act:'이동',memo:'검색창을 왼쪽으로 8px',loc:'renderer/welcome.html:62',got:false},
+ {n:3,app:'IINA',part:'List',act:'그리기',memo:'목록 사이 간격 표시',loc:'renderer/playlist.js:34',got:false}];
+
+function apps(){
+  const s=S.state;
+  if(s==='empty')return[];
+  if(s==='error')return[{...IINA,status:'missing'},{...WEB,n:0,status:'zero'}];
+  if(s==='loading')return[{...IINA,status:'loading'},{...WEB,status:'stale'}];
+  return[{...IINA,status:'ok'},{...WEB,status:'stale'}];
+}
+const qn=()=>S.state==='empty'?0:QUEUE.length;
+
+function renderNav(){
+  const items=[['status','status','상태'],['apps','apps','내 앱'],['queue','queue','대기열'],['settings','set','설정']];
+  const cnt={apps:apps().length||'',queue:qn()||''};
+  $('#nav').innerHTML=`<div class="brand"><svg class="logo" style="width:20px;height:20px"><use href="#tag"/></svg><span>UiNametag</span></div>`+
+   items.map(([v,i,t])=>`<button class="n" data-v="${v}" ${S.view===v?'aria-current="page"':''} title="${t}">${ic(i)}<span class="t2">${t}</span>${cnt[v]?`<span class="c">${cnt[v]}</span>`:''}</button>`).join('')+
+   `<div class="grow"></div><div class="conn"><span class="dot"></span><span>${S.on?'Claude 연결됨':'꺼짐'}</span></div>`;
+}
+
+function statusView(){
+  const a=apps(), bad=a.find(x=>x.status==='missing'||x.status==='zero'), load=a.find(x=>x.status==='loading');
+  let note='';
+  if(!a.length)note=`<div class="note"><span class="ic2">${ic('apps')}</span><div><b>아직 등록한 앱이 없어요</b><br>앱을 하나 등록해야 화면의 부품 이름을 알려 줄 수 있어요.</div><button class="btn primary" data-go="register">앱 등록하기</button></div>`;
+  else if(bad)note=`<div class="note err"><span class="ic2">${ic('warn')}</span><div><b>${bad.name}: ${bad.status==='missing'?'소스 폴더를 찾을 수 없어요':'사전이 비어 있어요'}</b><br>이 상태에선 부품 이름을 알려 줄 수 없어요.</div><button class="btn" data-go="apps">확인하기</button></div>`;
+  else if(load)note=`<div class="note"><span class="spin" style="margin-top:3px"></span><div><b>${load.name} 사전을 만드는 중이에요</b><br>끝나면 자동으로 정상으로 바뀌어요.</div></div>`;
+  return `<div class="pane">
+   <h1>상태</h1><p class="sub">지금 UiNametag가 하고 있는 일이에요.</p>
+   <div class="hero"><div class="big">${S.on?'켜져 있어요':'꺼져 있어요'}</div>
+     <button class="sw" role="switch" aria-checked="${S.on}" aria-label="UiNametag 켜기/끄기" id="power"></button></div>
+   ${note}
+   <div class="rows">
+    <div class="row"><span class="ic">${ic('pick')}</span><span class="k">고르기 모드</span><span class="v">화면의 부품을 가리켜 고르는 기능</span><span class="r"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>G</kbd></span></div>
+    <div class="row"><span class="ic" style="color:var(--rec)">${ic('rec')}</span><span class="k">녹화</span><span class="v">쉬는 중</span><span class="r"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>R</kbd></span></div>
+    <div class="row"><span class="ic">${ic('plug')}</span><span class="k">Claude 연결</span><span class="v"><span class="dot" style="display:inline-block;margin-right:6px"></span>연결됨 (MCP)</span></div>
+    <div class="row"><span class="ic">${ic('queue')}</span><span class="k">대기열</span><span class="v">${qn()?`고른 것 ${qn()}개 · Claude가 가져간 것 1개`:'비어 있어요'}</span><button class="btn" data-go="queue">보기</button></div>
+   </div></div>`;
+}
+
+function emptyApps(){
+  return `<div class="pane"><div class="empty"><div class="big">첫 앱을 등록해 볼까요?</div>
+   <p>고치고 싶은 앱을 등록하면, 그 앱 화면의 부품마다 이름과 소스 코드 위치를 알려 줘요.</p>
+   <ol><li>등록할 앱 창을 화면에서 클릭</li><li>그 앱의 소스 폴더 고르기</li><li>부품 이름표 목록(사전) 만들기</li></ol>
+   <button class="btn primary" data-go="register">${ic('plus')}새 앱 등록</button></div></div>`;
+}
+
+function appsView(){
+  const a=apps(); if(!a.length)return emptyApps();
+  const cur=a.find(x=>x.id===S.sel)||a[0];
+  const list=`<div class="list"><div class="hd"><h1 style="font-size:16px">내 앱</h1><button class="btn primary" data-go="register">${ic('plus')}새 앱</button></div>
+   <ul role="listbox" aria-label="등록된 앱">${a.map(x=>`<li><button class="item" role="option" aria-selected="${x.id===cur.id}" data-app="${x.id}"><span class="tile">${x.name[0].toUpperCase()}</span><div><div class="nm">${x.name}</div><div class="st">${x.status==='loading'?'<span class="spin" style="width:10px;height:10px;border-width:1.5px"></span>':`<span class="dot ${DOT[x.status]}"></span>`}${ST[x.status]}${x.status==='zero'?'':` · 사전 ${x.n}개`}</div></div></button></li>`).join('')}</ul></div>`;
+  return list+detail(cur);
+}
+function detail(x){
+  let mid='';
+  if(x.status==='ok')mid=previewCode(x);
+  if(x.status==='stale')mid=`<div class="note warn"><span class="ic2">${ic('warn')}</span><div><b>소스가 바뀌었어요</b><br>사전이 옛날 것이라 파일:줄이 어긋날 수 있어요. 다시 만들어 주세요.</div></div>`+previewCode(x);
+  if(x.status==='missing')mid=`<div class="note err"><span class="ic2">${ic('warn')}</span><div><b>소스 폴더를 찾을 수 없어요</b><br>옮겼다면 새 위치를 다시 골라 주세요. 지웠다면 이 앱을 지우고 다시 등록하세요.</div><button class="btn" data-go="register">폴더 다시 고르기</button></div>`;
+  if(x.status==='zero')mid=`<div class="note err"><span class="ic2">${ic('warn')}</span><div><b>이 폴더에는 부품 이름표(id)가 없어요</b><br>사전이 0개라 쓸 수 없어요. 앱 화면 코드가 들어 있는 폴더를 골랐는지 확인해 보세요. 한 단계 위나 아래 폴더가 맞을 수 있어요.</div><button class="btn" data-go="register">폴더 다시 고르기</button></div>`;
+  if(x.status==='loading')mid=`<div class="note"><span class="spin" style="margin-top:3px"></span><div style="flex:1"><b>사전을 만드는 중이에요</b> <span class="sub">134 / 216개 확인</span><div class="bar"><i style="width:62%"></i></div></div></div><div class="sk"></div><div class="sk" style="width:80%"></div>`;
+  const busy=x.status==='loading'||x.status==='missing';
+  return `<div class="detail"><div class="dh"><span class="tile">${x.name[0].toUpperCase()}</span><div><h1>${x.name}</h1><div class="sub"><span class="pill">${x.kind}</span> <span class="pill"><span class="dot ${DOT[x.status]}"></span>${ST[x.status]}</span></div></div></div>
+   <dl class="dl"><div><dt>${x.kind==='웹사이트'?'사이트 주소':'실행 파일'}</dt><dd class="mono">${x.exe}</dd></div><div><dt>소스 폴더</dt><dd class="mono">${x.src}</dd></div><div><dt>사전 항목</dt><dd>${x.n}개</dd></div><div><dt>마지막 갱신</dt><dd>${x.at}</dd></div></dl>
+   ${mid}
+   <div class="acts"><button class="btn ${x.status==='stale'?'primary':''}" ${busy?'disabled':''}>${ic('redo')}사전 다시 만들기</button><button class="btn" ${x.status==='missing'?'disabled':''}>${ic('folder')}소스 폴더 열기</button><button class="btn danger">${ic('trash')}지우기</button></div></div>`;
+}
+function previewCode(x){
+  return `<div class="code"><div class="ch"><span>사전 미리보기 (id → 파일:줄)</span><span>${x.n}개 중 ${PREVIEW.length}개</span></div>${PREVIEW.map(p=>`<div class="ln mono"><span>${p[0]}</span><span>→ ${p[1]}</span></div>`).join('')}</div>`;
+}
+
+function queueView(){
+  if(!qn())return `<div class="pane"><h1>대기열</h1><div class="empty" style="margin-top:48px"><div class="big">고른 것이 없어요</div><p>고르기 모드(<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>G</kbd>)로 화면의 부품을 가리키고 메모를 남기면 여기에 쌓여요.</p></div></div>`;
+  const chip=a=>`<span class="pill">${a}</span>`;
+  return `<div class="pane"><h1>대기열</h1><p class="sub">Claude가 가져갈 수 있도록 쌓아 둔 것이에요.</p>
+   <table><colgroup><col style="width:34px"><col style="width:180px"><col><col style="width:84px"><col style="width:96px"><col style="width:40px"></colgroup><thead><tr><th>#</th><th>부품</th><th>메모</th><th>동작</th><th>Claude</th><th></th></tr></thead><tbody>
+   ${QUEUE.map(q=>`<tr><td>${q.n}</td><td><div class="p">${q.app} · ${q.part}</div><div class="s">${q.loc}</div></td><td>“${q.memo}”</td><td>${chip(q.act)}</td><td>${q.got?`<span class="pill"><span class="dot"></span>가져감</span>`:`<span class="pill"><span class="dot off"></span>대기 중</span>`}</td><td><button class="ib" aria-label="${q.n}번 지우기">${ic('trash')}</button></td></tr>`).join('')}
+   </tbody></table>
+   <h2 class="sec">녹화</h2>
+   <table><colgroup><col style="width:34px"><col style="width:180px"><col><col style="width:84px"><col style="width:96px"><col style="width:40px"></colgroup><thead><tr><th></th><th>파일</th><th>메모</th><th>길이</th><th>Claude</th><th></th></tr></thead><tbody>
+   <tr><td><span class="dot rec" style="display:inline-block;margin-top:7px"></span></td><td><div class="p">rec_1020_164542</div></td><td>“필터 누르면 열렸다 닫힘”</td><td>3.1초</td><td><span class="pill"><span class="dot off"></span>대기 중</span></td><td><button class="ib" aria-label="녹화 지우기">${ic('trash')}</button></td></tr>
+   </tbody></table></div>`;
+}
+
+function settingsView(){
+  const cmd='claude mcp add uinametag -- uinametag-mcp';
+  return `<div class="pane"><h1>설정</h1><p class="sub">단축키와 녹화, 시작 방식을 바꿔요.</p>
+   <div class="set"><div class="l"><b>고르기 단축키</b><span>화면의 부품을 가리켜 고를 때</span></div><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>G</kbd><button class="btn">바꾸기</button></div>
+   <div class="set"><div class="l"><b>녹화 단축키</b><span>시작과 끝을 같은 키로</span></div><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>R</kbd><button class="btn">바꾸기</button></div>
+   <div class="set"><div class="l"><b>Windows 시작 시 자동 켜기</b><span>컴퓨터를 켜면 트레이에서 바로 실행</span></div><button class="sw" role="switch" aria-checked="true" aria-label="Windows 시작 시 자동 켜기" style="margin:0"></button></div>
+   <div class="set"><div class="l"><b>녹화 화질 / 최대 길이</b><span>길수록 파일이 커져요</span></div><select class="sel" aria-label="녹화 화질"><option>보통 (720p)</option><option>높음 (1080p)</option></select><select class="sel" aria-label="최대 길이"><option>30초</option><option>60초</option></select></div>
+   <div class="set"><div class="l"><b>데이터 폴더</b><span class="mono">C:\\Users\\gusql\\AppData\\Roaming\\UiNametag</span></div><button class="btn">${ic('folder')}열기</button></div>
+   <div style="padding-top:16px"><b style="color:var(--fg);font-weight:510">Claude 연결 안내</b><div class="sub">Claude Code에서 이 한 줄을 실행하면 연결돼요.</div>
+   <div class="cmd"><code>${cmd}</code><button class="btn" id="copy">${ic('copy')}<span>복사</span></button></div></div></div>`;
+}
+
+function stepper(){
+  const t=['앱 창 고르기','소스 폴더','사전 만들기'];
+  return `<ol class="steps" aria-label="등록 단계">${t.map((x,i)=>`<li class="${i<S.step?'done':i===S.step?'on':''}" ${i===S.step?'aria-current="step"':''}><span class="no">${i<S.step?ic('check'):i+1}</span>${x}</li>`).join('')}</ol>`;
+}
+function registerView(){
+  let body='';
+  const wins=[['IINA','Electron · 실행 중'],['남은일','Tauri 웹뷰 · 실행 중'],['http://localhost:5173','웹사이트 · 주소 직접 입력']];
+  if(S.step===0)body=`<h2>어떤 앱을 고칠까요?</h2><p class="sub">화면에서 직접 누르거나, 아래 목록에서 고르세요.</p>
+    <div class="acts" style="margin-top:12px"><button class="btn primary" id="pickwin">${ic('pick')}화면에서 앱 창 고르기</button></div>
+    <label class="lbl" style="margin-top:20px">실행 중인 창</label>
+    ${wins.slice(0,2).map(w=>`<button class="opt" role="radio" aria-checked="${S.pick===w[0]}" data-pick="${w[0]}"><span class="rd"></span><div><div class="a">${w[0]}</div><div class="b">${w[1]}</div></div></button>`).join('')}
+    <label class="lbl" for="url">웹사이트라면 주소를 입력하세요</label>
+    <div class="inp"><input id="url" placeholder="http://localhost:5173" value="${S.pick&&S.pick.startsWith('http')?S.pick:''}"><button class="btn" id="useurl">사용</button></div>`;
+  if(S.step===1){
+    const rec=[['C:\\Users\\gusql\\Desktop\\iina\\src','IINA · 어제 수정'],['C:\\Users\\gusql\\Desktop\\TODO-claude\\app','남은일 · 오늘 수정'],['C:\\Users\\gusql\\Desktop\\myweb\\src','myweb · 3일 전']];
+    body=`<h2>소스 폴더를 골라 주세요</h2><p class="sub">${S.pick} 화면 코드가 들어 있는 폴더예요.</p>
+    <label class="lbl" style="margin-top:14px">최근 프로젝트</label>
+    ${rec.map(r=>`<button class="opt" role="radio" aria-checked="${S.folder===r[0]}" data-folder="${r[0]}"><span class="rd"></span><div><div class="a">${r[1]}</div><div class="b mono">${r[0]}</div></div></button>`).join('')}
+    <label class="lbl" for="f">또는 직접 찾기</label><div class="inp"><input id="f" readonly placeholder="폴더를 선택하세요" value="${S.folder||''}"><button class="btn">${ic('folder')}찾아보기</button></div>`;}
+  if(S.step===2){
+    const b=S.built;
+    let res='';
+    if(b==='run')res=`<div class="note" style="margin-top:20px"><span class="spin" style="margin-top:3px"></span><div style="flex:1"><b>사전을 만드는 중이에요</b> <span class="sub" id="pct">0%</span><div class="bar"><i id="fill" style="width:0"></i></div></div></div>`;
+    else if(b==='ok')res=`<div class="note" style="margin-top:20px;border-color:rgba(39,166,68,.45)"><span class="ic2" style="color:var(--success)">${ic('check')}</span><div><b>항목 216개를 찾았어요</b><br>이제 ${S.pick} 화면의 부품을 가리키면 이름과 위치가 나와요.</div></div>${previewCode({n:216})}`;
+    else if(b==='zero')res=`<div class="note err" style="margin-top:20px"><span class="ic2">${ic('warn')}</span><div><b>항목 0개 — 이 폴더에는 부품 이름표(id)가 없어요</b><br>앱 화면 코드가 있는 폴더가 맞는지 확인하고, 한 단계 위나 아래 폴더를 골라 보세요.</div><button class="btn" data-step="1">폴더 다시 고르기</button></div>`;
+    body=`<h2>사전을 만들 준비가 됐어요</h2><p class="sub">사전 = 부품 이름표 목록이에요. 보통 몇 초 걸려요.</p>
+    <dl class="dl"><div><dt>앱</dt><dd>${S.pick}</dd></div><div><dt>소스 폴더</dt><dd class="mono">${S.folder}</dd></div></dl>
+    ${b?'':`<div class="acts"><button class="btn primary" id="build">사전 만들기</button></div>`}${res}`;
+  }
+  const next=S.step===0?`<button class="btn primary" data-step="1" ${S.pick?'':'disabled'}>다음</button>`:S.step===1?`<button class="btn primary" data-step="2" ${S.folder?'':'disabled'}>다음</button>`:(S.built==='ok'?`<button class="btn primary" data-go="apps">완료</button>`:'<span></span>');
+  return `<div class="pane"><button class="back" data-go="apps">${ic('back')}내 앱으로</button><h1>새 앱 등록</h1>${stepper()}${body}
+   <div class="foot">${S.step>0&&S.built!=='run'?`<button class="btn" data-step="${S.step-1}">이전</button>`:'<span></span>'}${next}</div></div>`;
+}
+
+function render(){
+  renderNav();
+  const v=S.view;
+  $('#main').innerHTML=v==='status'?statusView():v==='apps'?appsView():v==='queue'?queueView():v==='settings'?settingsView():registerView();
+  document.querySelectorAll('#seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===S.state));
+}
+let timer;
+function build(){
+  S.built='run';render();let p=0;
+  timer=setInterval(()=>{p+=8;const f=$('#fill');if(f){f.style.width=p+'%';$('#pct').textContent=p+'%';}
+    if(p>=100){clearInterval(timer);S.built=S.state==='error'?'zero':'ok';render();}},120);
+}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.parentElement.id==='seg'){clearInterval(timer);S.state=t.dataset.s;S.built=null;if(S.view==='register')S.view='apps';render();return;}
+  if(t.dataset.v){S.view=t.dataset.v;if(S.view!=='register'){S.step=0;S.built=null;}render();return;}
+  if(t.dataset.go){if(t.dataset.go==='register'){S.step=0;S.pick=null;S.folder=null;S.built=null;}clearInterval(timer);S.view=t.dataset.go;render();return;}
+  if(t.dataset.app){S.sel=t.dataset.app;render();return;}
+  if(t.dataset.step){S.step=+t.dataset.step;S.built=null;render();return;}
+  if(t.dataset.pick){S.pick=t.dataset.pick;render();return;}
+  if(t.dataset.folder){S.folder=t.dataset.folder;render();return;}
+  if(t.id==='pickwin'){S.pick='IINA';render();return;}
+  if(t.id==='useurl'){const u=$('#url').value.trim();if(u){S.pick=u;render();}return;}
+  if(t.id==='build'){build();return;}
+  if(t.id==='power'){S.on=!S.on;render();return;}
+  if(t.id==='copy'){const s=t.querySelector('span');s.textContent='복사됨';setTimeout(()=>s.textContent='복사',1500);return;}
+  if(t.classList.contains('sw')){t.setAttribute('aria-checked',t.getAttribute('aria-checked')!=='true');}
+});
+{const h=location.hash.slice(1).split(',');if(h[0])S.state=h[0];if(h[1])S.view=h[1];if(h[2]){S.step=+h[2];S.pick='IINA';S.folder='C:\Users\gusql\Desktop\iina\src';}}
+render();
+</script>
+</body>
+</html>

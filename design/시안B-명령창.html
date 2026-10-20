@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UiNametag 시안 B 명령창</title>
+<meta name="description" content="UiNametag 메인 창 시안 B: 명령창(커맨드 팔레트)형. Raycast 디자인 시스템.">
+<style>
+/* ─────────────────────────────────────────────────────────────────────────
+ * design-systems/raycast/tokens.css
+ *
+ * Structured token bindings for the "Raycast" brand — the macOS-native
+ * command palette / launcher's precision desktop-instrument voice.
+ *
+ * Brand identity in three sentences:
+ *   1. Near-black blue-tinted canvas (#07080a) — not pure black — with
+ *      semi-transparent white borders (0.06 opacity) and multi-layer
+ *      inset shadows that simulate physical glass-key depth.
+ *   2. Inter everywhere with OpenType "calt","kern","liga","ss03"; the
+ *      signature move is positive +0.2px letter-spacing on body for an
+ *      airy dark-mode rhythm, weight 500 as the readable body baseline.
+ *   3. Raycast Red (#FF6363) is punctuation, not pervasive — hero
+ *      stripes and danger states only. Raycast Blue (hsl(202,100%,67%))
+ *      carries interactive focus / links so red can stay scarce.
+ *
+ * Schema decisions:
+ *   - --bg #07080a (blue-cold near-black) / --surface #101111 (Surface 100).
+ *   - --surface-warm aliases --surface (cold-dark system, no warm tier).
+ *   - --fg #f9f9f9 near-white (avoids pure-white eye-strain on void).
+ *   - --fg-2 #cecece light-gray body / --meta #6a6b6c dim-gray metadata.
+ *   - --border rgba(255,255,255,0.06) — the "barely visible, structurally
+ *     essential" containment line called out in DESIGN.md §7.
+ *   - --accent #FF6363 (Raycast Red); hover/active shift tone, not opacity
+ *     (opacity 0.6 is a component-level interaction pattern, not a token).
+ *   - --focus-ring uses Raycast Blue, not accent red — separating brand
+ *     punctuation from interactive feedback is core to the system.
+ *   - --elev-ring is the macOS signature double-ring (outer #1b1c1e
+ *     + inset #07080a) that replaces traditional 1px borders on cards.
+ *   - --radius-sm 6px (workhorse: buttons / badges), --radius-md 12px
+ *     (standard cards), --radius-lg 16px (large feature containers).
+ * ─────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ─── Surface ──────────────────────────────────────────────────── */
+  --bg:           #07080a;              /* near-black blue tint — the void */
+  --surface:      #101111;              /* Surface 100 — elevated cards */
+  --surface-warm: var(--surface);       /* no warm tier in cold dark system */
+
+  /* ─── Foreground ───────────────────────────────────────────────── */
+  --fg:    #f9f9f9;                     /* near-white primary text */
+  --fg-2:  #cecece;                     /* light gray secondary body */
+  --muted: #9c9c9d;                     /* medium gray tertiary / nav links */
+  --meta:  #6a6b6c;                     /* dim gray placeholders / metadata */
+
+  /* ─── Border ───────────────────────────────────────────────────── */
+  --border:      rgba(255, 255, 255, 0.06);   /* card containment — barely visible */
+  --border-soft: rgba(255, 255, 255, 0.04);   /* inner row separator */
+
+  /* ─── Accent ───────────────────────────────────────────────────── */
+  --accent:        #FF6363;             /* Raycast Red — hero stripes, error states */
+  --accent-on:     #ffffff;
+  --accent-hover:  #ff7777;             /* lighter tone for hover */
+  --accent-active: #e85757;             /* darker tone for pressed */
+
+  /* ─── Semantic ─────────────────────────────────────────────────── */
+  --success: hsl(151, 59%, 59%);        /* Raycast Green */
+  --warn:    hsl(43, 100%, 60%);        /* Raycast Yellow */
+  --danger:  hsl(0, 100%, 69%);         /* Error Red (≈ #FF6363) */
+
+  /* ─── Typography ───────────────────────────────────────────────── */
+  --font-display: "Inter", "Inter Fallback", "SF Pro Display", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-body:    "Inter", "Inter Fallback", "SF Pro Text", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono:    "GeistMono", ui-monospace, "SF Mono", "Roboto Mono", Menlo, Monaco, Consolas, monospace;
+
+  /* Type scale — DESIGN.md §3 Typography Hierarchy.
+   * Display Hero (64px) → text-4xl; Section Display (≈40–56px) → text-3xl;
+   * Section Heading (24px) → text-2xl; Sub-heading (20px) → text-xl;
+   * Body Large (18px) → text-lg; Body (16px) → text-base;
+   * Caption (14px) → text-sm; Small (12px) → text-xs. */
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 16px;
+  --text-lg:   18px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+  --text-3xl:  40px;
+  --text-4xl:  64px;
+
+  /* Leading + tracking.
+   * --leading-body 1.6: DESIGN.md "Body 16/500/1.60" — relaxed dark rhythm.
+   * --leading-tight 1.1: hero hugs its baseline.
+   * --tracking-display 0px: hero is zero-tracked; body inline adds +0.2px
+   * (the signature Raycast move noted in DESIGN.md §3 Principles). */
+  --leading-body:     1.6;
+  --leading-tight:    1.1;
+  --tracking-display: 0px;
+
+  /* ─── Spacing ──────────────────────────────────────────────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-12: 48px;
+
+  /* Section rhythm — DESIGN.md §5 "80–120px vertical between sections".
+   * The dramatic negative space is the cinematic pacing of the system. */
+  --section-y-desktop: 96px;
+  --section-y-tablet:  64px;
+  --section-y-phone:   40px;
+
+  /* ─── Radius ───────────────────────────────────────────────────── */
+  /* 6px is the workhorse (buttons, badges); 12px standard cards;
+   * 16px large feature containers; pill (9999px) for primary CTAs
+   * — DESIGN.md uses 86px+ which is functionally pill at all sizes. */
+  --radius-sm:   6px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-pill: 9999px;
+
+  /* ─── Elevation ────────────────────────────────────────────────── */
+  /* macOS-native shadow philosophy: outer rings replace borders, inset
+   * highlights simulate light from above, inset darks simulate shadow
+   * underneath. --elev-ring is the signature double-ring: outer card-
+   * surface tone + inset deep-bg tone, creating physical containment. */
+  --elev-flat:   none;
+  --elev-ring:   rgb(27, 28, 30) 0px 0px 0px 1px, rgb(7, 8, 10) 0px 0px 0px 1px inset;
+  --elev-raised:
+    rgba(255, 255, 255, 0.05) 0px 1px 0px 0px inset,
+    rgba(0, 0, 0, 0.28) 0px 1.189px 2.377px,
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+
+  /* ─── Focus ────────────────────────────────────────────────────── */
+  /* Raycast Blue, not accent red — DESIGN.md §2 reserves red for hero
+   * stripes / danger and blue for interactive / focus / links. Keeping
+   * focus blue protects the scarcity of the red. */
+  --focus-ring: 0 0 0 3px hsla(202, 100%, 67%, 0.35);
+
+  /* ─── Motion ───────────────────────────────────────────────────── */
+  --motion-fast:   150ms;
+  --motion-base:   200ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ─── Layout ───────────────────────────────────────────────────── */
+  --container-max:            1200px;
+  --container-gutter-desktop: 24px;
+  --container-gutter-tablet:  16px;
+  --container-gutter-phone:   12px;
+}
+
+</style>
+<style>
+:root{
+  /* UiNametag 전용 토큰 (시스템 토큰 위에 얹음) */
+  --brand:#ff6a00; --brand-ink:#1a0d00; --rec:#e5534b;
+  --blue:hsl(202,100%,67%); --blue-soft:hsla(202,100%,67%,.15);
+  --danger-soft:hsla(0,100%,69%,.12); --warn-soft:hsla(43,100%,60%,.12); --ok-soft:hsla(151,59%,59%,.12);
+  --hover:rgba(255,255,255,.045); --sel:rgba(255,255,255,.085); --scrim:rgba(4,5,6,.62);
+  --key-a:#121212; --key-b:#0d0d0d; --card:#1b1c1e;
+  --font-body:"Inter","Segoe UI","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+  --font-display:var(--font-body);
+  --font-mono:"GeistMono",ui-monospace,Consolas,"D2Coding","Malgun Gothic",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg-2);font-family:var(--font-body);font-size:var(--text-sm);font-weight:500;line-height:1.4;letter-spacing:.2px;font-feature-settings:"calt","kern","liga","ss03";-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;letter-spacing:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+ul{list-style:none;margin:0;padding:0}
+svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.stage{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:8px}
+.switch{display:flex;align-items:center;gap:10px;font-size:var(--text-xs);color:var(--meta)}
+.switch b{font-weight:600;color:var(--muted)}
+.seg{display:inline-flex;padding:2px;border-radius:var(--radius-sm);background:var(--card);box-shadow:var(--elev-ring)}
+.seg button{padding:4px 12px;border-radius:5px;font-size:var(--text-xs);font-weight:600;color:var(--muted);transition:opacity var(--motion-fast)}
+.seg button:hover{opacity:.7}
+.seg button[aria-pressed=true],.seg button[aria-checked=true]{background:var(--sel);color:var(--fg);box-shadow:rgba(255,255,255,.1) 0 1px 0 inset}
+
+.win{position:relative;width:min(960px,calc(100vw - 16px));height:min(640px,calc(100vh - 56px));display:grid;grid-template-rows:32px 52px 30px minmax(0,1fr) 34px;background:var(--surface);border-radius:var(--radius-md);overflow:hidden;
+  box-shadow:rgba(0,0,0,.5) 0 0 0 2px,rgba(255,255,255,.1) 0 0 0 1px inset,rgba(0,0,0,.6) 0 24px 60px}
+.titlebar{display:flex;align-items:center;gap:8px;padding:0 0 0 12px;border-bottom:1px solid var(--border);font-size:var(--text-xs);font-weight:600;color:var(--muted)}
+.titlebar .logo{color:var(--brand)}
+.titlebar .wc{margin-left:auto;display:flex;height:100%}
+.titlebar .wc span{width:44px;display:grid;place-items:center;color:var(--meta)}
+.titlebar .wc svg{width:12px;height:12px}
+
+.cmd{display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--border);color:var(--meta);transition:box-shadow var(--motion-fast)}
+.cmd:focus-within{box-shadow:0 1px 0 0 var(--blue);color:var(--muted)}
+.cmd svg{width:18px;height:18px}
+.cmd input{flex:1;min-width:0;background:none;border:0;outline:0;box-shadow:none;color:var(--fg);font:inherit;font-size:var(--text-lg);font-weight:500;letter-spacing:.2px;caret-color:var(--brand)}
+.cmd input::placeholder{color:var(--meta)}
+
+.strip{display:flex;align-items:center;gap:4px;padding:0 10px;border-bottom:1px solid var(--border);font-size:var(--text-xs);color:var(--muted);white-space:nowrap;overflow:hidden}
+.strip .chip{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:var(--radius-sm);font-weight:600}
+.strip button.chip:hover{background:var(--hover)}
+.strip .sp{flex:1}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--meta);flex:none}
+.dot.on{background:var(--success)} .dot.rec{background:var(--rec)}
+.rec-on .dot.rec{animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.strip .warnchip{background:var(--warn-soft);color:var(--warn)}
+.strip .warnchip.err{background:var(--danger-soft);color:var(--danger)}
+.strip .warnchip svg{width:13px;height:13px}
+
+.body{position:relative;display:grid;grid-template-columns:minmax(0,1fr) clamp(224px,31%,296px);min-height:0}
+#list{overflow-y:auto;padding:4px 8px 8px;min-height:0;scrollbar-width:thin;scrollbar-color:var(--card) transparent}
+.sec{padding:12px 10px 4px;font-size:var(--text-xs);font-weight:600;color:var(--meta);display:flex;gap:8px}
+.sec span:last-child:not(:first-child){font-weight:500}
+.row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:10px;height:44px;padding:0 10px;border-radius:var(--radius-sm);cursor:default}
+.row:hover{background:var(--hover)}
+.row[aria-selected=true]{background:var(--sel);box-shadow:rgba(255,255,255,.06) 0 1px 0 inset}
+.ico{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;background:var(--card);color:var(--muted);box-shadow:rgba(255,255,255,.06) 0 1px 0 inset}
+.ico.brand{color:var(--brand)} .ico.rec{color:var(--rec)} .ico.err{color:var(--danger)}
+.row .t{min-width:0}
+.row .t b{display:block;color:var(--fg);font-weight:600;font-size:var(--text-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .t small{display:block;font-size:var(--text-xs);color:var(--meta);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.row .r{display:flex;align-items:center;gap:8px;font-size:var(--text-xs);color:var(--meta);white-space:nowrap}
+.row[aria-selected=true] .go{display:inline-flex}
+.go{display:none;align-items:center;gap:6px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:1px 7px;border-radius:var(--radius-sm);font-size:var(--text-xs);font-weight:600;background:var(--card);color:var(--fg-2)}
+.badge:empty{display:none}
+.badge.ok{background:var(--ok-soft);color:var(--success)} .badge.warn{background:var(--warn-soft);color:var(--warn)} .badge.err{background:var(--danger-soft);color:var(--danger)}
+.bar{height:4px;border-radius:2px;background:var(--card);overflow:hidden;margin-top:5px}
+.bar i{display:block;height:100%;background:var(--brand);border-radius:2px;transition:width 120ms linear}
+.kbd+.kbd{margin-left:4px}
+.kbd{display:inline-flex;align-items:center;justify-content:center;min-width:22px;padding:1px 6px;background:linear-gradient(to bottom,var(--key-a),var(--key-b));color:var(--fg-2);font-family:var(--font-mono);font-size:var(--text-xs);font-weight:600;border-radius:5px;line-height:1.5;
+  box-shadow:rgba(255,255,255,.1) 0 1px 0 inset,rgba(0,0,0,.4) 0 1.5px .5px 1.5px,rgba(0,0,0,.6) 0 2px 4px}
+.empty{margin:14px 10px 4px;padding:18px 18px 20px;border-radius:var(--radius-md);box-shadow:var(--elev-ring);background:var(--bg)}
+.empty h2{margin:0 0 4px;font-size:var(--text-xl);font-weight:600;color:var(--fg);letter-spacing:.2px}
+.empty p{margin:0;color:var(--muted);max-width:44ch;line-height:1.6}
+.none{padding:40px 16px;text-align:center;color:var(--meta)}
+.none b{display:block;color:var(--fg-2);font-size:var(--text-base);margin-bottom:4px}
+
+#side{border-left:1px solid var(--border);padding:16px;overflow-y:auto;min-height:0;background:var(--bg)}
+#side h3{margin:0;font-size:var(--text-lg);font-weight:600;color:var(--fg);line-height:1.25;word-break:break-all}
+.sh{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+.sh .ico{width:34px;height:34px}
+.sh small{display:block;color:var(--meta);font-size:var(--text-xs)}
+.note{padding:9px 11px;border-radius:var(--radius-sm);font-size:var(--text-xs);line-height:1.55;margin-bottom:12px;color:var(--fg-2)}
+.note b{display:block;color:var(--fg);font-size:var(--text-sm);margin-bottom:2px}
+.note.warn{background:var(--warn-soft)} .note.err{background:var(--danger-soft)} .note.info{background:var(--blue-soft)}
+.note ol{margin:6px 0 0;padding-left:18px}
+dl{margin:0 0 14px;display:grid;gap:9px}
+dt{font-size:var(--text-xs);color:var(--meta);font-weight:600}
+dd{margin:1px 0 0;color:var(--fg-2);font-size:var(--text-xs);line-height:1.5;word-break:break-all}
+dl.two{grid-template-columns:auto 1fr;gap:9px 20px;grid-auto-flow:column}
+#side,.sheet,.empty,.none,.note{word-break:keep-all}
+dd.mono{font-family:var(--font-mono)}
+.acts{border-top:1px solid var(--border);padding-top:8px;display:grid;gap:2px}
+.act{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:34px;padding:0 8px;border-radius:var(--radius-sm);color:var(--fg-2);font-size:var(--text-xs);font-weight:600;text-align:left}
+.act span{display:flex;align-items:center;gap:8px}
+.act:hover{background:var(--hover)}
+.act.danger{color:var(--danger)}
+.act.primary{color:var(--fg)}
+.act.primary svg{color:var(--brand)}
+.steps3{margin:0;padding:0;list-style:none;display:grid;gap:10px;counter-reset:s}
+.steps3 li{display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:var(--text-xs);color:var(--muted);line-height:1.5}
+.steps3 li::before{counter-increment:s;content:counter(s);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--card);color:var(--fg-2);font-weight:600}
+.steps3 b{color:var(--fg);display:block;font-size:var(--text-sm)}
+
+.hints{display:flex;align-items:center;gap:16px;padding:0 14px;border-top:1px solid var(--border);font-size:var(--text-xs);color:var(--meta);white-space:nowrap;overflow:hidden}
+.hints span{display:inline-flex;align-items:center;gap:6px}
+.hints .sp{flex:1}
+
+.toast{position:absolute;left:50%;bottom:46px;transform:translate(-50%,8px);opacity:0;pointer-events:none;max-width:80%;padding:8px 14px;border-radius:var(--radius-pill);background:var(--card);color:var(--fg);font-size:var(--text-xs);font-weight:600;box-shadow:var(--elev-raised),rgba(0,0,0,.5) 0 8px 24px;transition:opacity var(--motion-base),transform var(--motion-base) var(--ease-standard);z-index:30;display:flex;gap:8px;align-items:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast svg{width:14px;height:14px;color:var(--success)} .toast.bad svg{color:var(--danger)}
+
+/* 시트 */
+#sheetWrap{position:absolute;inset:0;z-index:20;background:var(--scrim);display:flex;justify-content:center;align-items:flex-start;padding:14px 16px 0}
+#sheetWrap[hidden]{display:none}
+.sheet{width:min(580px,100%);max-height:100%;overflow-y:auto;background:var(--surface);border-radius:var(--radius-md) var(--radius-md) 0 0;box-shadow:rgba(0,0,0,.5) 0 0 0 2px,rgba(255,255,255,.16) 0 0 14px,rgba(255,255,255,.08) 0 1px 0 inset;display:flex;flex-direction:column;animation:rise var(--motion-base) var(--ease-standard)}
+@keyframes rise{from{transform:translateY(10px)}}
+.sheet-h{display:flex;align-items:center;gap:10px;padding:14px 18px 10px}
+.sheet-h h2{margin:0;font-size:var(--text-lg);font-weight:600;color:var(--fg);flex:1}
+.stepper{display:flex;gap:6px;padding:0 18px 12px;border-bottom:1px solid var(--border)}
+.stepper div{flex:1;display:flex;align-items:center;gap:7px;font-size:var(--text-xs);font-weight:600;color:var(--meta);padding-top:8px;border-top:2px solid var(--card)}
+.stepper div[data-s=cur]{color:var(--fg);border-color:var(--brand)}
+.stepper div[data-s=done]{color:var(--muted);border-color:var(--meta)}
+.stepper svg{width:13px;height:13px;color:var(--success)}
+.sheet-b{padding:14px 18px 6px;display:grid;gap:12px;color:var(--fg-2)}
+.sheet-f{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:12px 18px 14px;position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);margin-top:auto}
+.sheet-f .sp{flex:1;color:var(--meta);font-size:var(--text-xs)}
+.btn{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:var(--radius-sm);font-size:var(--text-sm);font-weight:600;color:var(--fg);box-shadow:rgba(255,255,255,.05) 0 1px 0 inset,rgba(255,255,255,.14) 0 0 0 1px,rgba(0,0,0,.2) 0 -1px 0 inset;transition:opacity var(--motion-fast);white-space:nowrap}
+.btn:hover{opacity:.65}
+.btn.pri{background:var(--brand);color:var(--brand-ink);box-shadow:rgba(255,255,255,.3) 0 1px 0 inset;border-radius:var(--radius-pill);padding:0 16px}
+.btn.pri .kbd{background:rgba(0,0,0,.18);color:var(--brand-ink);box-shadow:none}
+.btn:focus-visible{box-shadow:var(--focus-ring)}
+.btn[disabled]{opacity:.35;cursor:not-allowed}
+.btn.sm{height:28px;padding:0 10px;font-size:var(--text-xs)}
+.field{display:grid;gap:6px}
+.field label,.lbl{font-size:var(--text-xs);color:var(--muted);font-weight:600}
+.inp{height:36px;width:100%;padding:0 12px;background:var(--bg);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--fg);font:inherit;font-size:var(--text-sm);font-family:var(--font-mono)}
+.inp:focus{outline:none;border-color:var(--blue);box-shadow:var(--focus-ring)}
+.inp.bad{border-color:var(--danger)}
+.msg{font-size:var(--text-xs);color:var(--danger);display:flex;gap:6px;align-items:center}
+.msg svg{width:14px;height:14px}
+.hint{font-size:var(--text-xs);color:var(--meta);font-weight:500}
+.opts{display:grid;gap:2px}
+.opt{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;height:44px;padding:0 10px;border-radius:var(--radius-sm);text-align:left;width:100%}
+.opt:hover{background:var(--hover)}
+.opt[aria-checked=true]{background:var(--sel);box-shadow:rgba(255,255,255,.06) 0 1px 0 inset}
+.opt[aria-disabled=true]{opacity:.5;cursor:not-allowed}
+.opt b{display:block;color:var(--fg);font-size:var(--text-sm);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.opt small{display:block;color:var(--meta);font-size:var(--text-xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick{display:flex;gap:10px;align-items:center;padding:12px;border-radius:var(--radius-md);box-shadow:var(--elev-ring);background:var(--bg)}
+.pick p{margin:0;flex:1;font-size:var(--text-xs);color:var(--muted);line-height:1.5}
+.sum{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:var(--text-xs);padding:12px;margin:0;border-radius:var(--radius-md);box-shadow:var(--elev-ring);background:var(--bg)}
+.sum dd{margin:0;font-family:var(--font-mono)}
+.big{display:flex;align-items:baseline;gap:8px;color:var(--fg)}
+.big b{font-size:var(--text-3xl);font-weight:600;line-height:1;letter-spacing:0}
+.lines{font-family:var(--font-mono);font-size:var(--text-xs);border-radius:var(--radius-md);box-shadow:var(--elev-ring);background:var(--bg);padding:6px 0}
+.lines div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.8fr);gap:10px;padding:3px 12px;color:var(--fg-2)}
+.lines div span:first-child{color:var(--blue)}
+.lines div span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lines .h span{color:var(--meta)}
+.srow{display:flex;align-items:center;gap:12px;min-height:44px;padding:6px 0;border-bottom:1px solid var(--border-soft)}
+.srow .l{flex:1;min-width:0}
+.srow .l b{display:block;color:var(--fg);font-weight:600}
+.srow .l small{display:block;color:var(--meta);font-size:var(--text-xs);word-break:break-all}
+.hk{min-width:150px;height:30px;justify-content:center;display:inline-flex;align-items:center;gap:4px;border-radius:var(--radius-sm);box-shadow:var(--elev-ring);background:var(--bg);font-size:var(--text-xs);color:var(--muted)}
+.hk.cap{box-shadow:var(--focus-ring),var(--elev-ring);color:var(--fg)}
+.sw{width:38px;height:22px;border-radius:11px;background:var(--card);position:relative;box-shadow:var(--elev-ring);transition:background var(--motion-fast)}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:transform var(--motion-fast) var(--ease-standard)}
+.sw[aria-checked=true]{background:var(--brand)} .sw[aria-checked=true]::after{transform:translateX(16px);background:var(--fg)}
+.sw:focus-visible{box-shadow:var(--focus-ring)}
+code.cmdline{display:block;padding:9px 11px;border-radius:8px;background:var(--bg);box-shadow:var(--elev-ring);font-family:var(--font-mono);font-size:var(--text-xs);color:var(--fg-2);word-break:break-all;line-height:1.55}
+@media (max-width:760px){.hints .opt-h{display:none}.strip .hide-s{display:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="switch" role="group" aria-label="상태 미리보기"><b>상태 미리보기</b>
+    <div class="seg"><button data-state="normal" aria-pressed="true">정상</button><button data-state="empty" aria-pressed="false">빈 상태</button><button data-state="loading" aria-pressed="false">로딩</button><button data-state="error" aria-pressed="false">오류</button></div>
+  </div>
+  <main class="win" data-od-id="main-window" aria-label="UiNametag">
+    <header class="titlebar"><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h8l5.5 5.5v8A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5z" fill="currentColor" stroke="none"/><path d="M8 11h8M8 15h5" stroke="#07080a" stroke-width="1.8"/></svg>UiNametag
+      <div class="wc" aria-hidden="true"><span><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></span><span><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></span></div></header>
+    <div class="cmd"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+      <input id="q" type="text" role="combobox" aria-expanded="true" aria-controls="list" aria-autocomplete="list" aria-label="명령 또는 검색" placeholder="명령이나 앱 이름을 입력하세요 — 앱 등록, 설정, IINA 사전 다시 만들기" autocomplete="off" spellcheck="false"></div>
+    <div class="strip" id="strip" aria-label="현재 상태"></div>
+    <div class="body">
+      <ul id="list" role="listbox" aria-label="내 앱, 대기열, 녹화, 명령"></ul>
+      <aside id="side" aria-label="고른 항목 자세히" aria-live="polite"></aside>
+      <div id="sheetWrap" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="시트"></div></div>
+    </div>
+    <footer class="hints" id="hints"></footer>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+</div>
+<script>
+const IC={
+ win:'<rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M3 9h18"/>',
+ globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+ tag:'<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h8l5.5 5.5v8A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5z"/><path d="M8 11h8M8 15h5"/>',
+ rec:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/>',
+ prompt:'<path d="m5 8 4 4-4 4M12 17h7"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ folder:'<path d="M3.5 7.5A2 2 0 0 1 5.5 5.5h4l2 2.5h7a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+ refresh:'<path d="M20 11a8 8 0 0 0-14.5-4M4 5v4h4M4 13a8 8 0 0 0 14.5 4M20 19v-4h-4"/>',
+ trash:'<path d="M4 7h16M10 7V4.5h4V7M6.5 7l.8 12.5h9.4L17.5 7M10 11v5M14 11v5"/>',
+ copy:'<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',
+ check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+ warn:'<path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.2v.1"/>',
+ cursor:'<path d="M6 4l12 6.5-5.2 1.6L11 18z"/>',
+ back:'<path d="m14 6-6 6 6 6"/>'
+};
+const ic=n=>`<svg viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const k=(...a)=>a.map(x=>`<span class="kbd">${esc(x)}</span>`).join('');
+const nowStr=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`};
+
+/* ---------- 데이터 (brief.md의 실제 예) ---------- */
+const mk={
+ iina:()=>({id:'iina',name:'IINA',kind:'Electron',exe:'C:\\Users\\gusql\\AppData\\Local\\Programs\\IINA\\IINA.exe',src:'C:\\Users\\gusql\\Desktop\\iina\\src',short:'…\\iina\\src',count:216,time:'2026-10-20 16:45',status:'ok'}),
+ myweb:s=>({id:'myweb',name:'localhost:5173',kind:'웹사이트',exe:'http://localhost:5173',src:'C:\\Users\\gusql\\Desktop\\myweb\\src',short:'…\\myweb\\src',count:132,time:'2026-10-19 21:10',status:s||'stale'}),
+ todo:()=>({id:'todo',name:'남은일',kind:'Tauri/웹뷰',exe:'C:\\Users\\gusql\\Desktop\\TODO-claude\\app\\남은일.exe',src:'C:\\Users\\gusql\\Desktop\\TODO-claude\\app',short:'…\\TODO-claude\\app',count:94,time:'2026-10-18 09:30',status:'missing'})
+};
+const Q=()=>[
+ {n:1,app:'IINA',part:'Button',loc:'renderer/welcome.html:50',memo:'설정 톱니 더 크게',act:'메모',taken:false},
+ {n:2,app:'IINA',part:'Slider',loc:'renderer/player.html:112',memo:'볼륨 슬라이더를 오른쪽으로',act:'이동',taken:true},
+ {n:3,app:'localhost:5173',part:'Input',loc:'src/App.tsx:27',memo:'검색창 테두리 흐리게',act:'그리기',taken:false}];
+const R=()=>[{name:'rec_1020_164542',dur:'3.1초',memo:'필터 누르면 열렸다 닫힘',taken:false}];
+
+let S={state:'normal',apps:[],queue:[],recs:[],picking:false,recording:false,recSec:0,q:'',sel:0,confirmDel:null,sheet:null};
+let CFG={hkPick:'Ctrl+Shift+G',hkRec:'Ctrl+Shift+R',auto:true,quality:'보통',max:60,dataDir:'C:\\Users\\gusql\\AppData\\Roaming\\UiNametag\\data'};
+const timers={};
+const stopTimers=()=>Object.keys(timers).forEach(n=>{if(n!=='rec'){clearInterval(timers[n]);delete timers[n]}});
+
+function setSwitch(){document.querySelectorAll('.switch [data-state]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.state===S.state))}
+function load(state){
+  stopTimers();
+  S.state=state;S.confirmDel=null;S.q='';$('#q').value='';S.sel=0;
+  if(state==='empty'){S.apps=[];S.queue=[];S.recs=[]}
+  else{S.apps=[mk.iina(),mk.myweb()];S.queue=Q();S.recs=R()}
+  if(state==='error'){S.apps=[mk.iina(),mk.myweb('zero'),mk.todo()];S.apps[1].count=0;S.sel=1}
+  setSwitch();
+  if(state==='loading')startBuild(S.apps[0],{slow:true,loop:true});
+  render();
+}
+
+/* ---------- 목록 만들기 ---------- */
+function commands(){
+  return [
+   {kind:'cmd',id:'reg',title:'앱 등록',sub:'화면에서 앱 창을 고르고 사전을 만듭니다 (3단계)',icon:'plus',keys:'앱 등록 새 앱 추가'},
+   {kind:'cmd',id:'set',title:'설정',sub:'단축키 · 자동 켜기 · 녹화 · Claude 연결',icon:'gear',keys:'설정 단축키'},
+   {kind:'cmd',id:'pick',title:S.picking?'고르기 모드 끄기':'고르기 모드 켜기',sub:`화면 부품을 가리켜 고릅니다 (${CFG.hkPick})`,icon:'cursor',keys:'고르기 모드',hidden:true},
+   {kind:'cmd',id:'rec',title:S.recording?'녹화 중지':'녹화 시작',sub:`화면을 녹화합니다 (${CFG.hkRec})`,icon:'rec',keys:'녹화 시작 중지',hidden:true},
+   {kind:'cmd',id:'clear',title:'대기열 비우기',sub:`고른 것 ${S.queue.length}개를 모두 지웁니다`,icon:'trash',keys:'대기열 비우기 지우기',hidden:true}
+  ];
+}
+function buildView(){
+  const q=S.q.trim().toLowerCase(),v=[];
+  const hit=t=>!q||t.toLowerCase().includes(q);
+  const apps=S.apps.filter(a=>hit(a.name+' '+a.kind+' '+a.src+' '+a.exe));
+  const qs=S.queue.filter(x=>hit(x.app+' '+x.part+' '+x.memo+' '+x.loc+' #'+x.n));
+  const rs=S.recs.filter(r=>hit(r.name+' '+r.memo));
+  const cs=commands().filter(c=>q?hit(c.keys+' '+c.title):!c.hidden);
+  if(q)S.apps.forEach(a=>{if(hit(a.name+' 사전 다시 만들기')||hit(a.name+' 사전'))cs.unshift({kind:'cmd',id:'rb:'+a.id,title:a.name+' 사전 다시 만들기',sub:'소스를 다시 읽어 부품 이름표 목록을 새로 만듭니다',icon:'refresh'})});
+  if(S.state==='empty'&&!q)v.push({kind:'empty'});
+  if(q&&cs.length){v.push({kind:'sec',label:'명령'});cs.forEach(c=>v.push(c))}
+  if(apps.length){v.push({kind:'sec',label:'내 앱',n:apps.length});apps.forEach(a=>v.push({kind:'app',a}))}
+  if(qs.length){v.push({kind:'sec',label:'대기열',n:qs.length});qs.forEach(x=>v.push({kind:'q',x}))}
+  if(rs.length){v.push({kind:'sec',label:'녹화',n:rs.length});rs.forEach(r=>v.push({kind:'rec',r}))}
+  if(!q&&cs.length){v.push({kind:'sec',label:'명령'});cs.forEach(c=>v.push(c))}
+  if(!v.some(e=>e.kind!=='sec'&&e.kind!=='empty'))v.push({kind:'none'});
+  return v;
+}
+let VIEW=[];
+const selectable=e=>!['sec','empty','none'].includes(e.kind);
+const selList=()=>VIEW.map((e,i)=>selectable(e)?i:-1).filter(i=>i>=0);
+const cur=()=>VIEW[selList()[S.sel]];
+const STAT={ok:['ok','정상'],stale:['warn','소스 바뀜'],missing:['err','폴더 없음'],zero:['err','사전 0개']};
+const needsFix=a=>a.status==='missing'||a.status==='zero';
+
+function rowHTML(e,i,on){
+  let ico='',t='',sub='',r='';
+  if(e.kind==='app'){const a=e.a;
+    ico=`<span class="ico ${needsFix(a)?'err':''}">${ic(a.kind==='웹사이트'?'globe':'win')}</span>`;t=a.name;
+    sub=`<small>${esc(a.kind)} · ${esc(a.short)}${a.building==null?` · 사전 ${a.count}개`:''}</small>`;
+    if(a.building!=null){sub+=`<div class="bar" role="progressbar" aria-valuenow="${a.building}" aria-valuemin="0" aria-valuemax="100" aria-label="사전 만드는 중"><i style="width:${a.building}%"></i></div>`;r=`<span>사전 만드는 중 ${a.building}%</span>`}
+    else{const s=STAT[a.status];r=`<span class="go">${k('Enter')} ${needsFix(a)?'폴더 다시 고르기':'다시 만들기'}</span><span class="badge ${s[0]}">${s[1]}</span>`}
+  }else if(e.kind==='q'){const x=e.x;ico=`<span class="ico">${ic('tag')}</span>`;t=`#${x.n} ${x.part}`;sub=`<small>${esc(x.app)} · ${esc(x.loc)} · “${esc(x.memo)}”</small>`;r=`<span class="go">${k('Enter')} 한 줄 복사</span><span class="badge ${x.taken?'ok':''}">${x.taken?'가져감':x.act}</span>`}
+  else if(e.kind==='rec'){const x=e.r;ico=`<span class="ico rec">${ic('rec')}</span>`;t=x.name;sub=`<small>${x.dur} · “${esc(x.memo)}”</small>`;r=`<span class="go">${k('Enter')} 폴더에서 보기</span><span class="badge ${x.taken?'ok':''}">${x.taken?'가져감':'대기'}</span>`}
+  else{ico=`<span class="ico ${e.id==='reg'?'brand':''}">${ic(e.icon)}</span>`;t=e.title;sub=`<small>${esc(e.sub)}</small>`;r=`<span class="go">${k('Enter')} 실행</span>`}
+  return `<li class="row" role="option" id="o${i}" data-i="${i}" aria-selected="${on}">${ico}<div class="t"><b>${esc(t)}</b>${sub}</div><div class="r">${r}</div></li>`;
+}
+function renderList(){
+  VIEW=buildView();const sl=selList();if(S.sel>=sl.length)S.sel=Math.max(0,sl.length-1);
+  const si=sl[S.sel];let h='';
+  VIEW.forEach((e,i)=>{
+    if(e.kind==='sec')h+=`<li class="sec" role="presentation"><span>${e.label}</span>${e.n?`<span>${e.n}</span>`:''}</li>`;
+    else if(e.kind==='empty')h+=`<li class="empty" role="presentation"><h2>아직 등록한 앱이 없어요</h2><p>앱을 하나 등록하면, 화면의 부품을 가리킬 때 이름과 소스 위치(파일:줄)를 바로 알려 줘요. Enter를 누르면 시작해요.</p></li>`;
+    else if(e.kind==='none')h+=`<li class="none" role="presentation"><b>“${esc(S.q)}”와 맞는 항목이 없어요</b>앱 이름, 부품 이름, 명령(예: 설정)으로 찾아 보세요. Esc로 입력을 지울 수 있어요.</li>`;
+    else h+=rowHTML(e,i,i===si);
+  });
+  const L=$('#list'),top=L.scrollTop;L.innerHTML=h;L.scrollTop=top;
+  $('#q').setAttribute('aria-activedescendant',si!=null?'o'+si:'');
+  const el=si!=null&&$('#o'+si);if(el)el.scrollIntoView({block:'nearest'});
+}
+
+/* ---------- 오른쪽 미리보기 ---------- */
+const dl=rows=>`<dl>${rows.map(([a,b,m])=>`<div><dt>${a}</dt><dd class="${m?'mono':''}">${b}</dd></div>`).join('')}</dl>`;
+const act=(label,key,icon,cls,id)=>`<button class="act ${cls||''}" data-act="${id}"><span>${ic(icon)}${label}</span>${key?k(...key.split(' ')):''}</button>`;
+function renderSide(){
+  const e=cur(),el=$('#side');
+  if(!e){el.innerHTML='';return}
+  let h='';
+  if(e.kind==='app'){const a=e.a,s=STAT[a.status];
+    h+=`<div class="sh"><span class="ico ${s[0]==='err'?'err':''}">${ic(a.kind==='웹사이트'?'globe':'win')}</span><div><h3>${esc(a.name)}</h3><small>${esc(a.kind)}</small></div></div>`;
+    if(a.building!=null)h+=`<div class="note info"><b>사전 만드는 중 ${a.building}%</b>소스 파일을 읽고 부품마다 이름표를 붙이고 있어요.<div class="bar"><i style="width:${a.building}%"></i></div></div>`;
+    else if(a.status==='stale')h+=`<div class="note warn"><b>소스가 바뀌었어요</b>마지막으로 만든 뒤 파일이 고쳐졌어요. 다시 만들면 새 위치가 맞게 나와요.</div>`;
+    else if(a.status==='missing')h+=`<div class="note err"><b>소스 폴더를 찾을 수 없어요</b>폴더 이름을 바꿨거나 옮겼을 수 있어요.<ol><li>Enter로 폴더를 다시 고르세요</li><li>프로젝트를 지웠다면 Del로 목록에서 빼세요</li></ol></div>`;
+    else if(a.status==='zero')h+=`<div class="note err"><b>사전 항목이 0개예요</b>이 폴더에는 부품 이름(id)이 든 파일이 없어요.<ol><li>화면 코드가 있는 폴더(예: src)를 고르세요</li><li>Enter로 폴더를 다시 고르세요</li></ol></div>`;
+    h+=dl([[a.kind==='웹사이트'?'사이트 주소':'실행 파일',esc(a.exe),1],['소스 폴더',esc(a.src),1]]).replace('<dl>','<dl style="margin-bottom:9px">')+dl([['사전 항목',a.count+'개'],['마지막 갱신',a.time]]).replace('<dl>','<dl class="two">');
+    h+=`<div class="acts">${needsFix(a)?act('소스 폴더 다시 고르기','Enter','folder','primary','run'):act('사전 다시 만들기','Enter','refresh','primary','run')}${act('소스 폴더 열기','Ctrl F','folder','','open')}${S.confirmDel===a.id?`<button class="act danger" data-act="del"><span>${ic('warn')}정말 지울까요? 한 번 더</span>${k('Del')}</button>`:act('지우기','Del','trash','danger','del')}</div>`;
+  }else if(e.kind==='q'){const x=e.x;
+    h+=`<div class="sh"><span class="ico">${ic('tag')}</span><div><h3>#${x.n} ${esc(x.part)}</h3><small>${esc(x.app)}</small></div></div>`;
+    h+=dl([['소스 위치',esc(x.loc),1],['메모',esc(x.memo)],['동작',x.act],['Claude가 가져갔나',x.taken?'가져감':'아직 안 가져감']]);
+    h+=`<div class="acts">${act('한 줄 복사','Enter','copy','primary','run')}${act('지우기','Del','trash','danger','del')}</div>`;
+  }else if(e.kind==='rec'){const x=e.r;
+    h+=`<div class="sh"><span class="ico rec">${ic('rec')}</span><div><h3>${esc(x.name)}</h3><small>녹화</small></div></div>`;
+    h+=dl([['길이',x.dur],['메모',esc(x.memo)],['Claude가 가져갔나',x.taken?'가져감':'아직 안 가져감']]);
+    h+=`<div class="acts">${act('폴더에서 보기','Enter','folder','primary','run')}${act('지우기','Del','trash','danger','del')}</div>`;
+  }else{
+    h+=`<div class="sh"><span class="ico ${e.id==='reg'?'brand':''}">${ic(e.icon)}</span><div><h3>${esc(e.title)}</h3><small>명령</small></div></div><p style="margin:0 0 14px;color:var(--muted);font-size:var(--text-xs);line-height:1.6">${esc(e.sub)}</p>`;
+    if(e.id==='reg')h+=`<ol class="steps3"><li><div><b>앱 창 고르기</b>화면에서 클릭하거나 주소를 입력해요</div></li><li><div><b>소스 폴더 고르기</b>최근 프로젝트를 추천해 드려요</div></li><li><div><b>사전 만들기</b>부품 이름표 목록이 만들어져요</div></li></ol>`;
+    h+=`<div class="acts" style="margin-top:14px">${act('실행','Enter','prompt','primary','run')}</div>`;
+  }
+  el.innerHTML=h;
+}
+function renderStrip(){
+  const w=S.apps.filter(a=>a.status!=='ok').length;
+  const m=Math.floor(S.recSec/60),s=String(S.recSec%60).padStart(2,'0');
+  const st=$('#strip');st.className='strip'+(S.recording?' rec-on':'');
+  st.innerHTML=`<span class="chip"><i class="dot on"></i>켜짐</span>
+   <button class="chip" data-st="pick" aria-pressed="${S.picking}" title="고르기 모드 (${CFG.hkPick})"><i class="dot ${S.picking?'on':''}"></i>고르기 모드 ${S.picking?'켜짐':'꺼짐'}</button>
+   <button class="chip" data-st="rec" aria-pressed="${S.recording}"><i class="dot ${S.recording?'rec':''}"></i>${S.recording?`녹화 중 ${m}:${s}`:'녹화 안 함'}</button>
+   <span class="chip hide-s"><i class="dot on"></i>Claude 연결됨</span>
+   <span class="sp"></span>
+   ${w?`<span class="chip warnchip ${S.state==='error'?'err':''}">${ic('warn')}확인할 앱 ${w}개</span>`:''}
+   <span class="chip">대기열 <b style="color:var(--fg)">${S.queue.length}</b></span>`;
+}
+function renderHints(){
+  const e=cur();let lab='실행';
+  if(e)lab=e.kind==='app'?(needsFix(e.a)?'폴더 다시 고르기':'사전 다시 만들기'):e.kind==='q'?'한 줄 복사':e.kind==='rec'?'폴더에서 보기':e.title;
+  $('#hints').innerHTML=`<span>${k('↑','↓')}이동</span><span>${k('Enter')}${esc(lab)}</span>${e&&e.kind!=='cmd'?`<span class="opt-h">${k('Del')}지우기</span>`:''}${e&&e.kind==='app'?`<span class="opt-h">${k('Ctrl','F')}소스 폴더 열기</span>`:''}<span class="sp"></span>${S.q?`<span>${k('Esc')}입력 지우기</span>`:''}`;
+}
+function render(){renderList();renderSide();renderStrip();if(!S.sheet)renderHints()}
+
+/* ---------- 토스트 ---------- */
+let tt;function toast(msg,bad){const t=$('#toast');t.className='toast show'+(bad?' bad':'');t.innerHTML=ic(bad?'warn':'check')+`<span>${esc(msg)}</span>`;clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2800)}
+function copy(txt){try{navigator.clipboard.writeText(txt).catch(()=>{})}catch(_){}}
+
+/* ---------- 사전 만들기 ---------- */
+function startBuild(a,o={}){
+  if(a.status==='missing'){toast('소스 폴더가 없어서 만들 수 없어요. 폴더를 다시 골라 주세요',true);return}
+  if(a.building!=null)return;
+  a.building=0;const step=o.slow?2:6;
+  const tick=()=>{
+    a.building=Math.min(100,Math.round(a.building+step));
+    if(a.building>=100){
+      if(o.loop){a.building=0}
+      else{clearInterval(timers[a.id]);delete timers[a.id];finishBuild(a)}
+    }
+    if(S.apps.includes(a))render();
+  };
+  timers[a.id]=setInterval(tick,100);render();
+}
+function finishBuild(a){
+  a.building=null;
+  if(a.status==='zero'){toast('이 폴더에는 아직 id가 없어요. 폴더를 다시 골라 주세요',true);return}
+  a.status='ok';a.time=nowStr();if(a.id==='iina')a.count=216;
+  toast(`${a.name} 사전 ${a.count}개를 만들었어요`);
+}
+
+/* ---------- 실행 ---------- */
+function run(){
+  const e=cur();if(!e)return;
+  if(e.kind==='app'){if(needsFix(e.a))openSheet('register',{reuse:e.a});else startBuild(e.a)}
+  else if(e.kind==='q'){const x=e.x;copy(`${x.app} · ${x.part} · ${x.loc} · ${x.memo}`);toast('한 줄을 복사했어요. Claude에게 붙여 넣으세요')}
+  else if(e.kind==='rec')toast(`${e.r.name} 폴더를 열었어요`);
+  else runCmd(e);
+}
+function runCmd(e){
+  if(e.id==='reg')openSheet('register');
+  else if(e.id==='set')openSheet('settings');
+  else if(e.id==='pick')togglePick();
+  else if(e.id==='rec')toggleRec();
+  else if(e.id==='clear'){const n=S.queue.length;S.queue=[];toast(n?`대기열 ${n}개를 지웠어요`:'지울 대기열이 없어요');render()}
+  else if(e.id.startsWith('rb:')){const a=S.apps.find(x=>x.id===e.id.slice(3));S.q='';$('#q').value='';S.sel=0;render();
+    const i=selList().findIndex(j=>VIEW[j].a===a);if(i>=0){S.sel=i;render()}startBuild(a)}
+}
+function togglePick(){S.picking=!S.picking;toast(S.picking?'고르기 모드를 켰어요. 화면 부품을 가리켜 보세요':'고르기 모드를 껐어요');render()}
+function toggleRec(){
+  S.recording=!S.recording;clearInterval(timers.rec);
+  if(S.recording){S.recSec=0;timers.rec=setInterval(()=>{S.recSec++;renderStrip()},1000);toast('녹화를 시작했어요')}
+  else{const d=nowStr().replace(/\D/g,'');S.recs.unshift({name:`rec_${d.slice(4,8)}_${d.slice(8)}00`,dur:Math.max(S.recSec,1)+'.0초',memo:'(메모 없음)',taken:false});toast('녹화를 저장했어요')}
+  render();
+}
+function del(){
+  const e=cur();if(!e||!['app','q','rec'].includes(e.kind))return;
+  if(e.kind==='app'){
+    if(S.confirmDel!==e.a.id){S.confirmDel=e.a.id;renderSide();return}
+    S.apps=S.apps.filter(a=>a!==e.a);S.confirmDel=null;toast(`${e.a.name}을(를) 목록에서 뺐어요 (소스 파일은 그대로예요)`);
+    if(!S.apps.length){S.state='empty';setSwitch()}
+  }else if(e.kind==='q'){S.queue=S.queue.filter(x=>x!==e.x);toast(`#${e.x.n} 을(를) 대기열에서 지웠어요`)}
+  else{S.recs=S.recs.filter(x=>x!==e.r);toast('녹화를 지웠어요')}
+  render();
+}
+function openFolder(){const e=cur();if(e&&e.kind==='app'){e.a.status==='missing'?toast('폴더가 없어서 열 수 없어요',true):toast(`탐색기로 열었어요: ${e.a.short}`)}}
+
+/* ---------- 시트 ---------- */
+const WINS=[
+ {name:'남은일',kind:'Tauri/웹뷰',sub:'남은일 — 오늘 할 일',src:'C:\\Users\\gusql\\Desktop\\TODO-claude\\app',exe:'C:\\Users\\gusql\\Desktop\\TODO-claude\\app\\남은일.exe'},
+ {name:'Visual Studio Code',kind:'Electron',sub:'index.html — myweb',src:'',exe:'C:\\Users\\gusql\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe'},
+ {name:'IINA',kind:'Electron',sub:'이미 등록한 앱이에요',reg:true}
+];
+const RECENT=['C:\\Users\\gusql\\Desktop\\TODO-claude\\app','C:\\Users\\gusql\\Desktop\\iina\\src','C:\\Users\\gusql\\Desktop\\myweb\\src','C:\\Users\\gusql\\Desktop\\old-proj\\src'];
+const GONE=RECENT[3];
+const SAMPLE=[['settings-gear','src/App.tsx:50'],['add-task-btn','src/components/TaskInput.tsx:18'],['task-list','src/components/TaskList.tsx:7'],['filter-tabs','src/components/FilterTabs.tsx:12'],['done-checkbox','src/components/TaskRow.tsx:31']];
+let G=null;
+function openSheet(kind,o={}){
+  S.sheet=kind;
+  G=kind==='register'?{step:o.reuse?2:1,tab:'win',win:-1,url:'',folder:'',prog:0,done:false,err:'',reuse:o.reuse||null,picking:false}:{cap:null,msg:''};
+  $('#sheetWrap').hidden=false;renderSheet();
+}
+function closeSheet(){S.sheet=null;stopTimers();$('#sheetWrap').hidden=true;$('#q').focus();render()}
+const focusables=()=>[...$('#sheetWrap').querySelectorAll('button:not([disabled]),input')];
+const canNext=()=>G.step===1?(G.tab==='win'?G.win>=0&&!WINS[G.win].reg:G.url.trim().length>0):G.step===2?G.folder.trim().length>0:true;
+function renderSheet(){
+  const el=$('#sheet');let h='';
+  if(S.sheet==='register'){
+    const reuse=G.reuse,last=G.step===3;
+    h+=`<div class="sheet-h"><span class="ico brand">${ic(reuse?'folder':'plus')}</span><h2>${reuse?esc(reuse.name)+' 소스 폴더 다시 고르기':'새 앱 등록'}</h2><button class="btn sm" data-sa="close">닫기 ${k('Esc')}</button></div>`;
+    h+=`<div class="stepper">${['앱 고르기','소스 폴더','사전 만들기'].map((n,i)=>`<div data-s="${i+1<G.step?'done':i+1===G.step?'cur':''}" ${i+1===G.step?'aria-current="step"':''}>${i+1<G.step?ic('check'):(i+1)+'.'} ${n}</div>`).join('')}</div><div class="sheet-b">`;
+    if(G.step===1){
+      h+=`<div class="seg" role="group" aria-label="종류" style="justify-self:start"><button data-sa="tab" data-v="win" aria-pressed="${G.tab==='win'}">실행 중인 창</button><button data-sa="tab" data-v="web" aria-pressed="${G.tab==='web'}">웹사이트 주소</button></div>`;
+      if(G.tab==='win'){
+        h+=`<div class="pick">${ic('cursor')}<p>${G.picking?'등록할 앱 창을 클릭하세요… (시안에서는 잠시 뒤 자동으로 골라요)':'버튼을 누른 뒤 화면에서 등록할 앱 창을 클릭하세요. 아래 목록에서 바로 골라도 돼요.'}</p><button class="btn sm" data-sa="pickwin" ${G.picking?'disabled':''}>앱 창 고르기</button></div>`;
+        h+=`<div class="opts" role="radiogroup" aria-label="실행 중인 창">${WINS.map((w,i)=>`<button class="opt" role="radio" aria-checked="${G.win===i}" aria-disabled="${!!w.reg}" data-sa="win" data-v="${i}"><span class="ico">${ic('win')}</span><span><b>${esc(w.name)}</b><small>${esc(w.sub)}</small></span><span class="badge ${w.reg?'ok':''}">${w.reg?'등록됨':w.kind}</span></button>`).join('')}</div>`;
+      }else{
+        h+=`<div class="field"><label for="url">사이트 주소</label><input class="inp ${G.err?'bad':''}" id="url" value="${esc(G.url)}" placeholder="http://localhost:5173" autocomplete="off" spellcheck="false" data-af="1">${G.err?`<div class="msg" id="err">${ic('warn')}${esc(G.err)}</div>`:'<div class="hint">개발 중인 사이트는 보통 http://localhost:숫자 예요.</div>'}</div>`;
+      }
+    }else if(G.step===2){
+      h+=`<div class="field"><label for="folder">소스 폴더</label><input class="inp ${G.err?'bad':''}" id="folder" value="${esc(G.folder)}" placeholder="C:\\Users\\…\\프로젝트\\src" autocomplete="off" spellcheck="false" data-af="1">${G.err?`<div class="msg">${ic('warn')}${esc(G.err)}</div>`:'<div class="hint">화면 코드가 들어 있는 폴더(보통 src)를 고르세요.</div>'}</div>`;
+      h+=`<div><div class="lbl" style="margin-bottom:4px">최근 프로젝트 (추천)</div><div class="opts" role="radiogroup" aria-label="최근 프로젝트">${RECENT.map((p,i)=>`<button class="opt" role="radio" aria-checked="${G.folder===p}" aria-disabled="${p===GONE}" data-sa="folder" data-v="${i}"><span class="ico ${p===GONE?'err':''}">${ic('folder')}</span><span><b>${esc(p.split('\\').slice(-2).join('\\'))}</b><small>${esc(p)}</small></span><span class="badge ${p===GONE?'err':''}">${p===GONE?'폴더 없음':(i===0&&G.win===0?'추천':'')}</span></button>`).join('')}</div></div>`;
+    }else{
+      const w=WINS[G.win];
+      G.nm=reuse?reuse.name:(G.tab==='web'?G.url.trim().replace(/^https?:\/\//,''):w.name);
+      G.kd=reuse?reuse.kind:(G.tab==='web'?'웹사이트':w.kind);
+      h+=`<dl class="sum"><dt>앱</dt><dd>${esc(G.nm)} (${esc(G.kd)})</dd><dt>소스 폴더</dt><dd>${esc(G.folder)}</dd></dl>`;
+      if(G.prog>0&&!G.done)h+=`<div><div class="lbl">사전 만드는 중 ${G.prog}%</div><div class="bar" role="progressbar" aria-valuenow="${G.prog}" aria-valuemin="0" aria-valuemax="100"><i style="width:${G.prog}%"></i></div></div>`;
+      if(G.done)h+=`<div class="big" role="status"><b>${G.n}</b><span>개 항목을 만들었어요</span></div><div class="lines" aria-label="사전 미리보기"><div class="h"><span>id</span><span>→ 파일:줄</span></div>${SAMPLE.map(l=>`<div><span>${esc(l[0])}</span><span>→ ${esc(l[1])}</span></div>`).join('')}</div>`;
+    }
+    h+=`</div><div class="sheet-f">${G.step>1&&!(reuse&&G.step===2)&&!G.done?`<button class="btn" data-sa="back">${ic('back')}이전</button>`:''}<span class="sp"></span>`;
+    if(!last)h+=`<button class="btn pri" data-sa="next" id="next" ${canNext()?'':'disabled'}>다음 ${k('Enter')}</button>`;
+    else if(!G.done)h+=`<button class="btn pri" data-sa="build" ${G.prog>0?'disabled':''} data-af="1">사전 만들기 ${k('Enter')}</button>`;
+    else h+=`<button class="btn pri" data-sa="finish" data-af="1">${reuse?'저장하고 닫기':'앱 목록에 추가'} ${k('Enter')}</button>`;
+    h+='</div>';
+    $('#hints').innerHTML=`<span>${k('↑','↓')}고르기</span><span>${k('Enter')}${last?(G.done?'목록에 추가':'사전 만들기'):'다음'}</span><span>${k('Alt','←')}이전</span><span class="sp"></span><span>${k('Esc')}닫기</span>`;
+  }else{
+    const hk=(id,v,lab,sub)=>`<div class="srow"><div class="l"><b>${lab}</b><small>${sub}</small></div><button class="hk ${G.cap===id?'cap':''}" data-sa="cap" data-v="${id}" aria-label="${lab} 바꾸기">${G.cap===id?'바꿀 키를 누르세요 (Esc 취소)':v.split('+').map(x=>k(x)).join('')}</button></div>`;
+    h+=`<div class="sheet-h"><span class="ico">${ic('gear')}</span><h2>설정</h2><button class="btn sm" data-sa="close">닫기 ${k('Esc')}</button></div><div class="sheet-b" style="gap:0;border-top:1px solid var(--border);padding-top:4px">`;
+    h+=hk('hkPick',CFG.hkPick,'고르기 단축키','화면 부품을 가리켜 고를 때')+hk('hkRec',CFG.hkRec,'녹화 단축키','녹화 시작·중지');
+    if(G.msg)h+=`<div class="msg" style="padding:6px 0">${ic('warn')}${esc(G.msg)}</div>`;
+    h+=`<div class="srow"><div class="l"><b>Windows 시작 시 자동 켜기</b><small>켜 두면 트레이에 늘 떠 있어요</small></div><button class="sw" role="switch" aria-checked="${CFG.auto}" aria-label="Windows 시작 시 자동 켜기" data-sa="auto"></button></div>`;
+    h+=`<div class="srow"><div class="l"><b>녹화 화질</b></div><div class="seg" role="radiogroup" aria-label="녹화 화질">${['낮음','보통','높음'].map(q=>`<button role="radio" aria-checked="${CFG.quality===q}" data-sa="qual" data-v="${q}">${q}</button>`).join('')}</div></div>`;
+    h+=`<div class="srow"><div class="l"><b>녹화 최대 길이</b></div><div class="seg" role="radiogroup" aria-label="녹화 최대 길이">${[30,60,120].map(q=>`<button role="radio" aria-checked="${CFG.max===q}" data-sa="max" data-v="${q}">${q}초</button>`).join('')}</div></div>`;
+    h+=`<div class="srow"><div class="l"><b>데이터 폴더</b><small style="font-family:var(--font-mono)">${esc(CFG.dataDir)}</small></div><button class="btn sm" data-sa="opendir">열기</button></div>`;
+    h+=`<div style="padding:10px 0 8px"><div class="srow" style="border:0;padding-top:0"><div class="l"><b>Claude 연결 (MCP)</b><small>아래 한 줄을 터미널에 붙여 넣으면 연결돼요</small></div><button class="btn sm" data-sa="copymcp">${ic('copy')}복사</button></div><code class="cmdline">claude mcp add uinametag -- "C:\\Users\\gusql\\AppData\\Local\\Programs\\UiNametag\\UiNametag.exe" --mcp</code></div>`;
+    h+=`</div><div class="sheet-f"><span class="sp">바꾼 내용은 바로 저장돼요</span><button class="btn pri" data-sa="close" data-af="1">완료 ${k('Esc')}</button></div>`;
+    $('#hints').innerHTML=`<span>${k('Tab')}다음 항목</span><span>${k('Space')}켜기·끄기</span><span class="sp"></span><span>${k('Esc')}닫기</span>`;
+  }
+  el.innerHTML=h;
+  const f=el.querySelector('[data-af="1"]');
+  if(f&&!(document.activeElement&&document.activeElement.dataset.keep))f.focus();
+  else if(!f&&G&&G.step===1&&G.tab==='win'&&S.sheet==='register'){(el.querySelector('[aria-checked="true"]')||el.querySelector('.opt:not([aria-disabled="true"])')).focus()}
+  else if(!f&&S.sheet==='register'&&G.step===2){const i=$('#folder');i.focus()}
+}
+function next(){
+  if(G.step===1){
+    if(G.tab==='web'){const u=G.url.trim();
+      if(!/^https?:\/\/[^\s/]+/i.test(u)){G.err='주소는 http:// 또는 https:// 로 시작해야 해요';renderSheet();return}
+      if(S.apps.some(a=>a.exe===u)){G.err='이미 등록한 주소예요. 내 앱 목록을 확인해 보세요';renderSheet();return}
+      G.folder=''}
+    else{if(!canNext())return;G.folder=WINS[G.win].src||''}
+    G.err='';G.step=2;renderSheet();
+  }else if(G.step===2){
+    const f=G.folder.trim();
+    if(f===GONE){G.err='이 폴더를 찾을 수 없어요. 다른 폴더를 고르세요';renderSheet();return}
+    if(!/^[a-z]:\\/i.test(f)){G.err='전체 경로로 적어 주세요 (예: C:\\Users\\…\\src)';renderSheet();return}
+    G.err='';G.step=3;G.prog=0;G.done=false;renderSheet();
+  }
+}
+function build(){
+  G.prog=1;renderSheet();
+  timers.reg=setInterval(()=>{G.prog=Math.min(100,G.prog+8);
+    if(G.prog>=100){clearInterval(timers.reg);delete timers.reg;G.done=true;G.n=G.reuse&&G.reuse.id==='iina'?216:94}
+    renderSheet()},110);
+}
+function finish(){
+  const t=nowStr();
+  if(G.reuse){Object.assign(G.reuse,{src:G.folder,short:'…\\'+G.folder.split('\\').slice(-2).join('\\'),count:G.n,time:t,status:'ok'});toast(`${G.reuse.name} 소스 폴더를 바꾸고 사전 ${G.n}개를 만들었어요`)}
+  else{
+    const w=G.tab==='win'?WINS[G.win]:null;
+    const a={id:'n'+Date.now(),name:G.nm,kind:G.kd,exe:w?w.exe:G.url.trim(),src:G.folder,short:'…\\'+G.folder.split('\\').slice(-2).join('\\'),count:G.n,time:t,status:'ok'};
+    S.apps.push(a);toast(`${a.name}을(를) 등록했어요 · 사전 ${a.count}개`);
+    S.q='';$('#q').value='';VIEW=buildView();S.sel=Math.max(0,selList().indexOf(VIEW.findIndex(e=>e.a===a)));
+  }
+  if(S.apps.every(a=>a.status==='ok')&&S.state!=='loading'){S.state='normal';setSwitch()}
+  closeSheet();
+}
+
+/* ---------- 이벤트 ---------- */
+$('#sheet').addEventListener('click',ev=>{
+  const b=ev.target.closest('[data-sa]');if(!b||b.disabled)return;const a=b.dataset.sa,v=b.dataset.v;
+  if(a==='close')closeSheet();
+  else if(a==='tab'){G.tab=v;G.err='';renderSheet()}
+  else if(a==='win'){if(WINS[+v].reg){toast('이미 등록한 앱이에요',true);return}G.win=+v;G.err='';renderSheet()}
+  else if(a==='pickwin'){G.picking=true;renderSheet();setTimeout(()=>{if(S.sheet==='register'&&G.picking){G.picking=false;G.win=0;renderSheet()}},1100)}
+  else if(a==='folder'){const p=RECENT[+v];G.folder=p;G.err=p===GONE?'이 폴더를 찾을 수 없어요. 다른 폴더를 고르세요':'';renderSheet()}
+  else if(a==='next')next();
+  else if(a==='back'){G.step--;G.err='';renderSheet()}
+  else if(a==='build')build();
+  else if(a==='finish')finish();
+  else if(a==='cap'){G.cap=G.cap===v?null:v;G.msg='';renderSheet();$('[data-sa=cap].cap')&&$('[data-sa=cap].cap').focus()}
+  else if(a==='auto'){CFG.auto=!CFG.auto;b.dataset.keep=1;renderSheet();$('[data-sa=auto]').focus()}
+  else if(a==='qual'||a==='max'){CFG[a==='qual'?'quality':'max']=a==='max'?+v:v;renderSheet();$(`[data-sa=${a}][data-v="${v}"]`).focus()}
+  else if(a==='opendir')toast('탐색기로 데이터 폴더를 열었어요');
+  else if(a==='copymcp'){copy($('.cmdline').textContent);toast('연결 명령을 복사했어요')}
+});
+$('#sheet').addEventListener('input',ev=>{
+  if(ev.target.id==='url'){G.url=ev.target.value;G.err='';const m=$('#err');if(m)m.remove();ev.target.classList.remove('bad')}
+  if(ev.target.id==='folder'){G.folder=ev.target.value;G.err=''}
+  const n=$('#next');if(n)n.disabled=!canNext();
+});
+$('#sheetWrap').addEventListener('mousedown',ev=>{if(ev.target.id==='sheetWrap')closeSheet()});
+$('#q').addEventListener('input',e=>{S.q=e.target.value;S.sel=0;S.confirmDel=null;render()});
+$('#list').addEventListener('click',ev=>{const r=ev.target.closest('.row');if(!r)return;S.sel=selList().indexOf(+r.dataset.i);S.confirmDel=null;render();$('#q').focus()});
+$('#list').addEventListener('dblclick',ev=>{if(ev.target.closest('.row'))run()});
+$('#side').addEventListener('click',ev=>{
+  const b=ev.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
+  if(a==='run')run();else if(a==='open')openFolder();else if(a==='del')del();
+  if(!S.sheet)$('#q').focus();
+});
+$('#strip').addEventListener('click',ev=>{const b=ev.target.closest('[data-st]');if(!b)return;
+  if(b.dataset.st==='pick')togglePick();else toggleRec();$('#q').focus()});
+document.querySelector('.switch').addEventListener('click',ev=>{const b=ev.target.closest('[data-state]');if(!b)return;
+  if(S.sheet)closeSheet();load(b.dataset.state);$('#q').focus()});
+
+document.addEventListener('keydown',ev=>{
+  if(S.sheet){
+    if(S.sheet==='settings'&&G.cap){ev.preventDefault();
+      if(ev.key==='Escape'){G.cap=null;renderSheet();return}
+      if(['Control','Shift','Alt','Meta'].includes(ev.key))return;
+      if(!ev.ctrlKey&&!ev.altKey){G.msg='Ctrl 또는 Alt를 함께 눌러 주세요';renderSheet();return}
+      const key=ev.key.length===1?ev.key.toUpperCase():ev.key;
+      const c=[ev.ctrlKey&&'Ctrl',ev.altKey&&'Alt',ev.shiftKey&&'Shift',key].filter(Boolean).join('+');
+      if(c===(G.cap==='hkPick'?CFG.hkRec:CFG.hkPick)){G.msg='다른 기능과 같은 단축키예요';renderSheet();return}
+      CFG[G.cap]=c;G.cap=null;G.msg='';renderSheet();toast('단축키를 '+c+'로 바꿨어요');return}
+    if(ev.key==='Escape'){ev.preventDefault();closeSheet();return}
+    if(ev.key==='Tab'){const f=focusables();if(!f.length)return;const i=f.indexOf(document.activeElement);
+      if(ev.shiftKey&&i<=0){ev.preventDefault();f[f.length-1].focus()}else if(!ev.shiftKey&&i===f.length-1){ev.preventDefault();f[0].focus()}return}
+    if(S.sheet==='register'){
+      if(ev.altKey&&ev.key==='ArrowLeft'&&G.step>1&&!(G.reuse&&G.step===2)&&!G.done){ev.preventDefault();G.step--;G.err='';renderSheet();return}
+      if((ev.key==='ArrowDown'||ev.key==='ArrowUp')&&((G.step===1&&G.tab==='win')||G.step===2)){
+        ev.preventDefault();const list=G.step===1?WINS:RECENT;let i=G.step===1?G.win:RECENT.indexOf(G.folder);
+        const d=ev.key==='ArrowDown'?1:-1;
+        for(let n=0;n<list.length;n++){i=(i+d+list.length)%list.length;if(!(G.step===1?list[i].reg:list[i]===GONE))break}
+        if(G.step===1)G.win=i;else{G.folder=RECENT[i];G.err=''}
+        renderSheet();const t=$('#sheet').querySelector('.opt[aria-checked="true"]');if(t)t.focus();return}
+      if(ev.key==='Enter'){
+        const ae=document.activeElement;
+        if(ae&&ae.tagName==='BUTTON'&&['close','back','tab','pickwin'].includes(ae.dataset.sa))return;
+        ev.preventDefault();
+        if(G.step<3){if(canNext())next()}else if(G.done)finish();else if(!G.prog)build();
+      }
+    }
+    return;
+  }
+  const sl=selList(),inInput=document.activeElement===$('#q');
+  if(ev.key==='ArrowDown'||ev.key==='ArrowUp'){ev.preventDefault();if(!sl.length)return;S.sel=(S.sel+(ev.key==='ArrowDown'?1:-1)+sl.length)%sl.length;S.confirmDel=null;render();$('#q').focus()}
+  else if(ev.key==='Enter'){const ae=document.activeElement;if(ae&&ae.tagName==='BUTTON')return;ev.preventDefault();if(S.confirmDel)del();else run()}
+  else if(ev.key==='Escape'){if(S.confirmDel){S.confirmDel=null;renderSide()}else if(S.q){S.q='';$('#q').value='';S.sel=0;render()}}
+  else if(ev.key==='Delete'&&!S.q){ev.preventDefault();del()}
+  else if(ev.ctrlKey&&ev.key.toLowerCase()==='f'){ev.preventDefault();openFolder()}
+  else if(ev.ctrlKey&&ev.key===','){ev.preventDefault();openSheet('settings')}
+  else if(!ev.ctrlKey&&!ev.altKey&&!ev.metaKey&&ev.key.length===1&&!inInput){$('#q').focus()}
+});
+
+/* 시작 — 주소 뒤 #error 같은 값으로 바로 열어 볼 수 있음(캡처용) */
+(function(){
+  const h=location.hash.replace('#','');
+  load(['empty','loading','error'].includes(h)||h==='error-fix'?(h==='error-fix'?'error':h):'normal');
+  if(h==='register')openSheet('register');
+  else if(h==='register2'){openSheet('register');G.win=0;G.step=2;G.folder=WINS[0].src;renderSheet()}
+  else if(h==='register3'){openSheet('register');G.win=0;G.step=3;G.folder=WINS[0].src;G.done=true;G.n=94;renderSheet()}
+  else if(h==='error-fix'){S.sel=2;render()}
+  else if(h==='settings')openSheet('settings');
+  else if(h==='search'){$('#q').value='iina';S.q='iina';render()}
+  if(!S.sheet)$('#q').focus();
+})();
+</script>
+</body>
+</html>
