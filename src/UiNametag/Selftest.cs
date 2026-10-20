@@ -220,8 +220,12 @@ public static class Selftest
         Row("11 위에 뜬 창도 찍힘", magenta && size == "300×200", $"그림 {size} · 가운데 보라색 {magenta}");
 
         // 12 그리기: 부품 밖에 그린 선도 사진에 들어간다 (부품+선을 감싸게, 선이 보이는 채로 찍음)
-        var part = new Point(wa.Left + 200, wa.Top + 200);
+        // 작은 부품(100×40 창)을 띄워 고르고, 그 밖으로 멀리(오른쪽 아래 500·300px) 선을 긋는다
+        var part = new Point(wa.Left + 250, wa.Top + 220);
         var far = new Point(wa.Left + 700, wa.Top + 500);
+        var small = new Window { WindowStyle = WindowStyle.None, Topmost = true, ShowInTaskbar = false, ResizeMode = ResizeMode.NoResize, Background = System.Windows.Media.Brushes.SteelBlue, ShowActivated = false };
+        small.SourceInitialized += (_, _) => { var s3 = System.Windows.Media.VisualTreeHelper.GetDpi(small).DpiScaleX; small.Left = (part.X - 50) / s3; small.Top = (part.Y - 20) / s3; small.Width = 100 / s3; small.Height = 40 / s3; };
+        small.Show(); await Task.Delay(400);
         picker.FakeCursor = part; picker.TestSelect(); await Task.Delay(800);
         var partRect = picker.Current?.Rect;
         picker.Fake(Native.WM_LBUTTONDOWN, part);
@@ -249,10 +253,15 @@ public static class Selftest
         {
             using var bmp = new System.Drawing.Bitmap(dsp);
             dsize = $"{bmp.Width}×{bmp.Height}";
-            for (int yy = 0; yy < bmp.Height; yy += 2) for (int xx = 0; xx < bmp.Width; xx += 2) { var px = bmp.GetPixel(xx, yy); if (px.R > 200 && px.G < 110 && px.B < 110) red++; }
+            // 부품 오른쪽 끝(사진 안 위치)보다 바깥쪽에 있는 빨간 점만 센다 = 부품 밖 선
+            var outX = (int)((partRect?.Width ?? 0) + 40 + 10);
+            for (int yy = 0; yy < bmp.Height; yy += 2) for (int xx = outX; xx < bmp.Width; xx += 2) { var px = bmp.GetPixel(xx, yy); if (px.R > 200 && px.G < 110 && px.B < 110) red++; }
         }
-        var covers = dp != null && dp.Shot != null && dsize.Length > 0 && int.Parse(dsize.Split('×')[0]) >= far.X + 150 - (partRect?.X ?? far.X);
-        Row("12 그린 선이 사진에", dp != null && covers && red > 20, $"부품 {Store.R(partRect ?? Rect.Empty).Aggregate("", (a, v) => a + v + " ")}· 사진 {dsize} · 빨간 점 {red}개 · {dp?.Shot}");
+        small.Close();
+        // 사진이 부품(100×40)보다 훨씬 커져서 선 끝(far+150, far+200)까지 덮어야 함
+        var small1 = partRect is { } pr && pr.Width <= 120 && pr.Height <= 60;
+        var covers = dp != null && dsize.Length > 0 && int.Parse(dsize.Split('×')[0]) >= far.X + 150 - part.X && int.Parse(dsize.Split('×')[1]) >= far.Y + 200 - part.Y;
+        Row("12 부품 밖 선까지 사진에", dp != null && small1 && covers && red > 20, $"부품 {Store.R(partRect ?? Rect.Empty).Aggregate("", (a, v) => a + v + " ")}· 사진 {dsize} · 부품 밖 빨간 점 {red}개");
     }
 
     static IEnumerable<T> FindAll<T>(DependencyObject d) where T : DependencyObject
