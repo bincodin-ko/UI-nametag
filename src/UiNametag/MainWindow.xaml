@@ -296,6 +296,16 @@
                                 <DockPanel>
                                     <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="지우기" Foreground="{StaticResource Muted}" VerticalAlignment="Top" Tag="{Binding}" Click="DeleteRec_Click"/>
                                     <CheckBox DockPanel.Dock="Left" Style="{StaticResource Check}" Margin="0,2,12,0" VerticalAlignment="Top" IsChecked="{Binding Sel, Mode=TwoWay}" Visibility="{Binding SelVis}" Click="PickCheck_Click" ToolTip="체크한 것만 Claude에게 보내요 (아무것도 안 고르면 남은 것 전부)"/>
+                                    <Button DockPanel.Dock="Left" Style="{StaticResource Row}" Padding="0" Margin="0,0,14,0" VerticalAlignment="Top" Visibility="{Binding ThumbVis}" Tag="{Binding}" Click="RecThumb_Click" ToolTip="누르면 영상 재생">
+                                        <Grid Width="140" MaxHeight="150"> <!-- 폰 녹화(세로)도 너무 작지 않게 -->
+                                            <Border CornerRadius="4" BorderBrush="{StaticResource Line}" BorderThickness="1" ClipToBounds="True">
+                                                <Image Source="{Binding Thumb}" Stretch="Uniform"/>
+                                            </Border>
+                                            <Border Width="34" Height="34" CornerRadius="17" Background="#AA000000" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock Text="▶" Foreground="White" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="{Binding Head}" FontWeight="SemiBold"/>

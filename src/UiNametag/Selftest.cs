@@ -112,6 +112,18 @@ public static class Selftest
         // 클릭 장면(t*.png)과 끝 장면(end.png)이 둘 다 있어야 함
         Row("5 get_recording", shots.Any(f => Path.GetFileName(f).StartsWith('t')) && shots.Any(f => f.EndsWith("end.png")), $"장면 {shots.Count}장: {string.Join(", ", paths.Select(Path.GetFileName))}");
 
+        // 녹화 미리보기: 대기열 녹화 칸에 영상 가운데 장면 그림이 뜨고(▶), 그림 파일이 만들어진다
+        picker.ShowMain("queue"); await Task.Delay(800);
+        var qw = Application.Current.Windows.OfType<MainWindow>().First();
+        qw.Go("queue"); qw.UpdateLayout();
+        var rrow = ((IEnumerable<RecRow>)qw.RecsList.ItemsSource).FirstOrDefault(x => x.R.Id == rec.Id);
+        var thumbFile = Path.Combine(Catalog.DataDir, rec.Id + "_thumb.png");
+        var shown = FindAll<System.Windows.Controls.Image>(qw.RecsList).Any(i => i.IsVisible && i.Source != null && i.ActualWidth > 30 && i.ActualHeight > 60);
+        int tw = 0; bool notBlack = false;
+        if (File.Exists(thumbFile)) { using var tb = new System.Drawing.Bitmap(thumbFile); tw = tb.Width; for (int yy = 0; yy < tb.Height && !notBlack; yy += 4) for (int xx = 0; xx < tb.Width; xx += 4) { var px0 = tb.GetPixel(xx, yy); if (px0.R + px0.G + px0.B > 60) { notBlack = true; break; } } }
+        Row("5 녹화 미리보기", rrow?.Thumb != null && shown && tw == 280 && notBlack, $"미리보기 그림 {(File.Exists(thumbFile) ? Path.GetFileName(thumbFile) : "없음")} 폭 {tw} · 화면에 보임 {shown} · 검은 화면 아님 {notBlack}");
+        qw.Close();
+
         Clean(rec);
     }
 

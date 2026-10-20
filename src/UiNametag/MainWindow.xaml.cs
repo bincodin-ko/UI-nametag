@@ -308,6 +308,11 @@ public partial class MainWindow : Window
         if (((PickRow)((FrameworkElement)s).Tag).P.Shot is { } f && File.Exists(f)) Process.Start(new ProcessStartInfo(f) { UseShellExecute = true });
     }
 
+    void RecThumb_Click(object s, RoutedEventArgs e)
+    {
+        if (((RecRow)((FrameworkElement)s).Tag).R.Video is { } v && File.Exists(v)) Process.Start(new ProcessStartInfo(v) { UseShellExecute = true });
+    }
+
     void DeletePick_Click(object s, RoutedEventArgs e) { Store.RemovePick(((PickRow)((FrameworkElement)s).Tag).P.No); RefreshQueue(); }
     void DeleteRec_Click(object s, RoutedEventArgs e) { Store.RemoveRec(((RecRow)((FrameworkElement)s).Tag).R); RefreshQueue(); }
     void ClearTakenButton_Click(object s, RoutedEventArgs e) { Store.RemoveDone(); RefreshQueue(); }

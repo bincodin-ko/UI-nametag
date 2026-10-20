@@ -48,6 +48,22 @@ public class RecRow(Recording r, HashSet<string>? sel = null)
     public bool Sel { get => sel?.Contains(R.Id) == true; set { if (sel == null) return; if (value) sel.Add(R.Id); else sel.Remove(R.Id); } }
     public Visibility SelVis => R.Done ? Visibility.Hidden : Visibility.Visible;
     public string Taken => R.Done ? "✓ 고침 완료" : "대기 중";
+    // 미리보기: 영상 가운데 장면 한 장 (rec_…_thumb.png, 처음 한 번 ffmpeg로 뽑아 두고 다시 씀. 녹화를 지우면 같이 지워짐)
+    public System.Windows.Media.ImageSource? Thumb
+    {
+        get
+        {
+            if (!System.IO.File.Exists(R.Video)) return null;
+            var f = System.IO.Path.Combine(Catalog.DataDir, R.Id + "_thumb.png");
+            if (!System.IO.File.Exists(f))
+                Store.Ffmpeg($"-ss {Math.Max(0, R.Seconds / 2):F2} -i \"{R.Video}\" -frames:v 1 -vf scale=280:-2 \"{f}\"", 10000);
+            if (!System.IO.File.Exists(f)) return null;
+            var b = new System.Windows.Media.Imaging.BitmapImage();
+            b.BeginInit(); b.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad; b.UriSource = new Uri(f); b.EndInit(); b.Freeze();
+            return b;
+        }
+    }
+    public Visibility ThumbVis => System.IO.File.Exists(R.Video) ? Visibility.Visible : Visibility.Collapsed;
     public Brush TakenBrush => AppRow.Res(R.Done ? "Ok" : "Accent");
     public string Head => $"{R.Id} · {R.Seconds:F1}초";
     public string Memo => R.Memo.Length > 0 ? R.Memo : "(메모 없음)";
