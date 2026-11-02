@@ -66,7 +66,7 @@ public class Overlay : Window
         if (text == null) { b.Visibility = Visibility.Collapsed; return; }
         ((TextBlock)b.Child).Text = text;
         var a = P(x, y);
-        Canvas.SetLeft(b, a.X); Canvas.SetTop(b, Math.Max(0, a.Y - 26));
+        Canvas.SetLeft(b, a.X); Canvas.SetTop(b, Math.Max(0, a.Y - MemoWindow.TagH));
         b.Visibility = Visibility.Visible;
     }
 
@@ -105,11 +105,29 @@ public class MemoWindow : Window
         };
         PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
         SourceInitialized += (_, _) => Native.DarkTitle(new WindowInteropHelper(this).Handle);
-        Loaded += (_, _) => { FitOnScreen(); Activate(); Box.Focus(); };
+        Loaded += (_, _) => { FitHeight(); FitOnScreen(); Activate(); Box.Focus(); };
+        ContentRendered += (_, _) => { if (FitHeight()) FitOnScreen(); };
+    }
+
+    // 실제 창(HWND) 안쪽이 내용보다 작으면 버튼 아래가 잘린다(사용자 화면, 2026-11-03) → 실제 크기를 재서 키우고 기록
+    public bool FitHeight()
+    {
+        var hw = new WindowInteropHelper(this).Handle;
+        if (hw == IntPtr.Zero || Content is not FrameworkElement c) return false;
+        Native.GetWindowRect(hw, out var wr); Native.GetClientRect(hw, out var cr);
+        var s = VisualTreeHelper.GetDpi(this).DpiScaleY;
+        c.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        double client = cr.Bottom / s, need = c.DesiredSize.Height, frame = (wr.Bottom - wr.Top) / s - client;
+        if (client >= need - 0.5) return false;
+        try { System.IO.File.AppendAllText(System.IO.Path.Combine(Catalog.DataDir, "memo_fit.log"), $"{DateTime.Now:s} 안쪽 {client:F0} < 내용 {need:F0} · 테두리 {frame:F0} · 창 {wr.Left},{wr.Top},{wr.Right},{wr.Bottom} · dpi {s}\n"); } catch { }
+        SizeToContent = SizeToContent.Width;
+        Height = need + frame;
+        return true;
     }
 
     // 부품(물리 픽셀) 아래에 띄우되, 그 모니터 작업 영역 밖으로 나가면 부품 위로 / 안쪽으로 당긴다
     public double[]? Anchor;
+    public const double TagH = 26;   // Overlay.Say가 이름표를 부품 위 26 DIP에 놓는다
     void FitOnScreen()
     {
         var s = VisualTreeHelper.GetDpi(this).DpiScaleX;
@@ -117,7 +135,7 @@ public class MemoWindow : Window
         var wa = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)a[0], (int)a[1])).WorkingArea;
         double L = wa.Left / s, T = wa.Top / s, R = wa.Right / s, B = wa.Bottom / s, w = ActualWidth, h = ActualHeight;
         var top = (a[1] + a[3]) / s + 10;
-        if (top + h > B) top = a[1] / s - h - 10;          // 아래 자리 없으면 위로
+        if (top + h > B) top = a[1] / s - TagH - h - 10;   // 아래 자리 없으면 위로 (부품 위 주황 이름표에 버튼이 가리지 않게 그만큼 더 위)
         Top = Math.Clamp(top, T, Math.Max(T, B - h));
         Left = Math.Clamp(a[0] / s, L, Math.Max(L, R - w));
     }

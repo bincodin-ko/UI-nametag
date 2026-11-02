@@ -1,0 +1,14 @@
+<Window x:Class="UiNametag.SelftestTarget"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="UiNametag selftest 대상" Width="420" Height="260" WindowStyle="ToolWindow" ResizeMode="NoResize"
+        ShowInTaskbar="False" Topmost="True" ShowActivated="False" WindowStartupLocation="CenterScreen"
+        Background="#202024" Foreground="White" FontFamily="Malgun Gothic">
+    <!-- selftest 2~5 전용 시험 대상(다른 앱을 켜지 않는다). 버튼·목록은 눌러도 아무 일 없음 -->
+    <Grid Margin="16">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Button x:Name="StSettings" Content="설정" Width="64" Height="32" HorizontalAlignment="Right"/>
+        <ListBox x:Name="StRecent" Grid.Row="1" Margin="0,10"><ListBoxItem Content="최근 항목 1"/><ListBoxItem Content="최근 항목 2"/></ListBox>
+        <TextBlock x:Name="StLabel" Grid.Row="2" Text="selftest 글자" FontSize="16"/>
+    </Grid>
+</Window>

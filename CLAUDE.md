@@ -4,7 +4,7 @@
 - 이 폴더 안 파일, `src/` 빌드·실행
 - NuGet 패키지 받기(`dotnet add package`), `%LOCALAPPDATA%\UiNametag` 데이터 폴더
 - 시험 클릭은 눌러도 아무 일 없는 글자(Text)에만. 목록 항목·버튼은 누르지 않는다(2026-10-20 최근 목록을 눌러 영상이 열리고 재생 기록이 바뀐 사고)
-- 시험 대상 IINA(`C:\Users\gusql\Desktop\IINA.lnk`) 실행·종료, UI Automation으로 읽기, Windows-MCP Click으로 시험 클릭
+- 시험 대상은 앱 안 시험 전용 창 `src/UiNametag/SelftestTarget.xaml`(selftest가 띄우고 닫음). 다른 앱(IINA 등)은 시험에 켜지 않는다(2026-11-02 사용자)
 
 ## 절대 하지 않는 것
 - IINA 소스(`C:\Users\gusql\Desktop\iina`) 수정 — 읽기만
@@ -17,4 +17,4 @@
 ## 되돌리는 법
 - 데이터: `%LOCALAPPDATA%\UiNametag` 폴더 삭제
 - 빌드물: `src/*/bin`, `src/*/obj` 삭제
-- 켜진 프로그램: 작업 관리자에서 `UiNametag`, `IINA` 끄기
+- 켜진 프로그램: 작업 관리자에서 `UiNametag` 끄기

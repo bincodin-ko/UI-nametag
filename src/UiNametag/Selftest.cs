@@ -16,101 +16,88 @@ public static class Selftest
     public static async Task<int> Run(string project)
     {
         try { await Steps(project); }
-        catch (SkipException e) { Console.WriteLine($"SKIP | 2~5 IINA 시험 | {e.Message}"); }
         catch (Exception e) { Row("예외", false, e.GetType().Name + ": " + e.Message); }
         finally { Clean(null); } // 중간에 멈춰도 시험 흔적·사용자 읽음 표시를 되돌린다
         Console.WriteLine($"\n{Rows.Count(r => r.Ok)}/{Rows.Count} 통과");
         return Rows.All(r => r.Ok) ? 0 : 1;
     }
 
-    class SkipException(string m) : Exception(m);
-
     static Dictionary<int, (bool Delivered, bool Done)> _userState = [];
 
     static async Task Steps(string project)
     {
         _userState = Store.Picks().ToDictionary(p => p.No, p => (p.Delivered, p.Done));
-        // 1 사전
+        // 1 사전: 이 앱 소스에서 시험 대상 창(SelftestTarget.xaml)의 부품까지 뽑힌다
         var n = Catalog.Build(project);
-        var s = Catalog.Lookup("settings").Select(x => x.E).FirstOrDefault(e => e.File.EndsWith("welcome.html"));
-        Row("1 사전", s?.Line == 50, $"항목 {n}개 · settings → {s?.File}:{s?.Line}");
+        var xaml = Path.Combine(project, "SelftestTarget.xaml");
+        int LineOf(string name) => File.Exists(xaml) ? File.ReadAllLines(xaml).ToList().FindIndex(l => l.Contains($"x:Name=\"{name}\"")) + 1 : 0;
+        var s = Catalog.Lookup("StSettings").Select(x => x.E).FirstOrDefault(e => e.File.EndsWith("SelftestTarget.xaml"));
+        Row("1 사전", s != null && s.Line == LineOf("StSettings"), $"항목 {n}개 · StSettings → {s?.File}:{s?.Line}");
 
         var picker = new Picker();
         var exe = Environment.ProcessPath!;
         await using var mcp = await McpClient.CreateAsync(new StdioClientTransport(new() { Command = exe, Arguments = ["mcp"], Name = "self" }));
 
-        // 사용자가 IINA로 영상을 보고 있으면 IINA를 건드리는 시험(2~5)은 건너뛴다
-        if (Process.GetProcessesByName("IINA").Any(x => x.MainWindowHandle != IntPtr.Zero && x.MainWindowTitle != "IINA"))
-        {
-            Console.WriteLine("SKIP | 2~5 IINA 시험 | 사용자가 IINA 사용 중 — 건드리지 않음");
-            await Extra(mcp, picker);
-            Clean(null);
-            return;
-        }
+        // 2~5 시험 대상: 다른 앱(IINA 등)을 켜지 않고 이 앱 안의 시험 전용 창을 맨 위에 띄운다
+        var target = new SelftestTarget();
+        target.Show(); await Task.Delay(600);
+        Rect Scr(FrameworkElement e) => new(e.PointToScreen(new Point(0, 0)), e.PointToScreen(new Point(e.ActualWidth, e.ActualHeight)));
 
         // 2 picker 이름 찾기 (투명 레이어를 띄운 채로 마우스 아래 부품을 읽는다)
-        var win = await IinaWindow();
-        var settings = win.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.AutomationIdProperty, "settings"));
-        var c = Center(settings.Current.BoundingRectangle);
-        Front(new IntPtr(win.Current.NativeWindowHandle));
+        var sr0 = Scr(target.StSettings);
+        var c = Center(sr0);
         picker.FakeCursor = c;
         picker.TestSelect();
         await Task.Delay(800);
         var hit = picker.Current;
-        if (hit == null) try { await Task.Run(() => Catalog.Resolve(c)); } catch (Exception ex) { Console.WriteLine("DEBUG " + ex); }
-        Row("2 picker", hit?.Entry?.Line == 50 && hit.Entry.File.EndsWith("welcome.html"), hit?.Label ?? "못 읽음");
+        Row("2 picker", hit?.Entry?.File == "SelftestTarget.xaml" && hit.Entry.Line == LineOf("StSettings"), hit?.Label ?? "못 읽음");
         picker.Exit();
 
         // 3 고르기 → MCP
         var pick = Store.Add("note", Store.ToTarget(hit!), "selftest 간격 좁게");
         var picks = await Call(mcp, "get_picks", new() { ["all"] = true });
-        var look = await Call(mcp, "catalog_lookup", new() { ["query"] = "settings" });
-        Row("3 get_picks", picks.Contains("selftest 간격 좁게") && picks.Contains("welcome.html"), $"pick #{pick.No} 받음={picks.Contains("selftest")}");
-        Row("3 catalog_lookup", look.Contains("welcome.html:50"), look.Split('\n')[0]);
+        var look = await Call(mcp, "catalog_lookup", new() { ["query"] = "StSettings" });
+        Row("3 get_picks", picks.Contains("selftest 간격 좁게") && picks.Contains("SelftestTarget.xaml"), $"pick #{pick.No} 받음={picks.Contains("selftest")}");
+        Row("3 catalog_lookup", look.Contains($"SelftestTarget.xaml:{LineOf("StSettings")}"), look.Split('\n')[0]);
 
         // 4 이동 · check_layout · preview_plan
-        var recent = win.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.AutomationIdProperty, "recent"));
-        var rr = Store.R(recent.Current.BoundingRectangle);
-        var anchor = Catalog.Resolve(Center(recent.Current.BoundingRectangle))!;
+        var recentRect = Scr(target.StRecent);
+        var rr = Store.R(recentRect);
+        var anchor = (await Task.Run(() => Catalog.Resolve(Center(recentRect))))!; // 내 창 UI 스레드를 막지 않게 다른 스레드에서
         var mv = Store.Add("move", Store.ToTarget(hit!), "selftest 이동", new Move(Store.ToTarget(anchor), "앞", rr));
-        var sr = Store.R(settings.Current.BoundingRectangle);
-        var same = await Call(mcp, "check_layout", new() { ["automationId"] = "settings", ["x"] = sr[0], ["y"] = sr[1], ["w"] = sr[2], ["h"] = sr[3] });
-        var off = await Call(mcp, "check_layout", new() { ["automationId"] = "settings", ["x"] = sr[0] + sr[2], ["y"] = sr[1], ["w"] = sr[2], ["h"] = sr[3] });
-        Row("4 move 저장", Store.Picks().Any(p => p.No == mv.No && p.Move?.Anchor.Id == "recent"), $"anchor={anchor.Id} {anchor.Entry?.File}:{anchor.Entry?.Line}");
+        var sr = Store.R(sr0);
+        var same = await Call(mcp, "check_layout", new() { ["automationId"] = "StSettings", ["x"] = sr[0], ["y"] = sr[1], ["w"] = sr[2], ["h"] = sr[3] });
+        var off = await Call(mcp, "check_layout", new() { ["automationId"] = "StSettings", ["x"] = sr[0] + sr[2], ["y"] = sr[1], ["w"] = sr[2], ["h"] = sr[3] });
+        Row("4 move 저장", Store.Picks().Any(p => p.No == mv.No && p.Move?.Anchor.Id == "StRecent"), $"anchor={anchor.Id} {anchor.Entry?.File}:{anchor.Entry?.Line}");
         Row("4 check_layout 같음", same.Contains("겹침 100%"), same);
         Row("4 check_layout 비킴", off.Contains("겹침 0%"), off);
         var prev = Call(mcp, "preview_plan", new() { ["x"] = rr[0], ["y"] = rr[1], ["w"] = sr[2], ["h"] = sr[3], ["label"] = "selftest", ["timeoutSeconds"] = 5 });
         await Task.Delay(2500);
-        var pw = AutomationElement.RootElement.FindFirst(TreeScope.Children, new PropertyCondition(AutomationElement.NameProperty, "UiNametag preview"));
+        var pw = await Task.Run(() => AutomationElement.RootElement.FindFirst(TreeScope.Children, new PropertyCondition(AutomationElement.NameProperty, "UiNametag preview")));
         var prevRes = await prev;
         Row("4 preview_plan 창", pw != null && prevRes.Contains("시간 초과"), $"창 보임={pw != null} · 답={prevRes}");
 
-        await Extra(mcp, picker);
-
-        // 5 녹화: IINA 창을 녹화하며 눌러도 아무 일 없는 글자(Text)를 실제로 클릭 (클릭은 picker 훅이 기록)
-        // 목록·버튼은 누르면 영상이 열리거나 기록이 바뀐다 → 절대 누르지 않는다 (2026-10-20 사고)
-        var hwnd = new IntPtr(win.Current.NativeWindowHandle);
+        // 5 녹화: 시험 창을 녹화하며 글자(Text)에 가짜 클릭 (picker 훅의 기록 길로만 들어감, OS 입력 없음)
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(target).Handle;
         picker.Rec.Start(hwnd);
         await Task.Delay(1000);
-        Front(hwnd);
-        var label = win.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Text));
-        var rc = Center(label.Current.BoundingRectangle);
-        if (Catalog.Resolve(rc)?.Kind != "Text") throw new InvalidOperationException("클릭 지점이 글자가 아님 — 클릭 시험 중단");
-        // 클릭 바로 직전: 그 자리 맨 위 창이 IINA가 아니면(게임 등 다른 창이 덮음) 누르지 않는다
+        var rc = Center(Scr(target.StLabel));
+        var labelHit = await Task.Run(() => Catalog.Resolve(rc));
         Native.GetWindowThreadProcessId(Native.GetAncestor(Native.WindowFromPoint(new Native.POINT { X = (int)rc.X, Y = (int)rc.Y }), 2), out var topPid);
-        if (Process.GetProcessById((int)topPid).ProcessName != "IINA") throw new SkipException("클릭 자리에 IINA가 아닌 창이 있음");
-        picker.Fake(Native.WM_LBUTTONDOWN, rc); // 가짜 클릭: 녹화 기록 길로만 들어가고 IINA엔 안 감
+        var onTop = topPid == Environment.ProcessId;
+        if (onTop && labelHit?.Kind == "Text") picker.Fake(Native.WM_LBUTTONDOWN, rc);
         await Task.Delay(1800);
         var rec = picker.Rec.Stop("selftest 녹화");
         var size = File.Exists(rec.Video) ? new FileInfo(rec.Video).Length : 0;
         var dur = Probe(rec.Video);
         Row("5 녹화 파일", size > 0 && dur > 1, $"{Path.GetFileName(rec.Video)} {size / 1024}KB {dur:F1}초");
-        Row("5 클릭 기록", rec.Events.Any(e => e.What == "Click" && e.Target?.Kind == "Text"), string.Join(" / ", rec.Events.Select(e => $"{e.T}s {e.What} {e.Target?.Id} {e.State}")));
+        Row("5 클릭 기록", rec.Events.Any(e => e.What == "Click" && e.Target?.Kind == "Text"), $"맨 위 {onTop} · 글자 {labelHit?.Kind} · " + string.Join(" / ", rec.Events.Select(e => $"{e.T}s {e.What} {e.Target?.Id} {e.State}")));
         var gr = await Call(mcp, "get_recording", new() { ["id"] = rec.Id });
         var paths = gr.Split("장면: ").Last().Trim().Split(" | ", StringSplitOptions.RemoveEmptyEntries);
         var shots = paths.Where(File.Exists).ToList();
         // 클릭 장면(t*.png)과 끝 장면(end.png)이 둘 다 있어야 함
         Row("5 get_recording", shots.Any(f => Path.GetFileName(f).StartsWith('t')) && shots.Any(f => f.EndsWith("end.png")), $"장면 {shots.Count}장: {string.Join(", ", paths.Select(Path.GetFileName))}");
+        target.Close();
 
         // 녹화 미리보기: 대기열 녹화 칸에 영상 가운데 장면 그림이 뜨고(▶), 그림 파일이 만들어진다
         picker.ShowMain("queue"); await Task.Delay(800);
@@ -124,6 +111,7 @@ public static class Selftest
         Row("5 녹화 미리보기", rrow?.Thumb != null && shown && tw == 280 && notBlack, $"미리보기 그림 {(File.Exists(thumbFile) ? Path.GetFileName(thumbFile) : "없음")} 폭 {tw} · 화면에 보임 {shown} · 검은 화면 아님 {notBlack}");
         qw.Close();
 
+        await Extra(mcp, picker);
         Clean(rec);
     }
 
@@ -140,18 +128,31 @@ public static class Selftest
 
         // 7 메모 창: 화면 맨 아래 부품이어도 화면 안에 뜨고, Esc로 닫힌다
         var wa = System.Windows.Forms.Screen.PrimaryScreen!.WorkingArea;
-        var memo = new MemoWindow("selftest", ["저장", "취소"]) { Anchor = [wa.Left + 100, wa.Bottom - 30, 80, 24] };
+        var memo = new MemoWindow("묶음 · Group · (root 안) index.html:26", ["저장", "이동", "그리기", "취소"]) { Anchor = [wa.Left + 100, wa.Bottom - 30, 80, 24] };
         picker.TestMemo(memo);
         await Task.Delay(500);
         var ds = System.Windows.Media.VisualTreeHelper.GetDpi(memo).DpiScaleX;
         var inside = memo.Top >= wa.Top / ds - 1 && memo.Top + memo.ActualHeight <= wa.Bottom / ds + 1;
         Row("7 메모 창 화면 안", inside, $"창 {memo.Top:F0}~{memo.Top + memo.ActualHeight:F0} · 작업 영역 {wa.Top / ds:F0}~{wa.Bottom / ds:F0}");
+        // 위로 뜰 때 부품 위 주황 이름표(TagH)와 겹치면 버튼이 가려 잘려 보인다 (대기열 #3)
+        var tagTop = (wa.Bottom - 30) / ds - MemoWindow.TagH;
+        Row("7 메모 창 이름표 안 가림", memo.Top + memo.ActualHeight <= tagTop + 0.5, $"창 아래 {memo.Top + memo.ActualHeight:F0} · 이름표 위 {tagTop:F0}");
         // 버튼이 창 안쪽에 다 들어오는지 (잘려 보이던 문제)
         var lastBtn = FindAll<System.Windows.Controls.Button>(memo).Last();
         var bBottom = lastBtn.TranslatePoint(new Point(0, lastBtn.ActualHeight), memo).Y;
         var bRight = lastBtn.TranslatePoint(new Point(lastBtn.ActualWidth, 0), memo).X;
         var content = (FrameworkElement)memo.Content;
         Row("7 메모 창 버튼 안 잘림", bBottom <= content.ActualHeight + 20 && bRight <= memo.ActualWidth, $"버튼 아래 {bBottom:F0} · 내용 높이 {content.ActualHeight:F0} · 버튼 오른쪽 {bRight:F0} · 창 폭 {memo.ActualWidth:F0}");
+        // WPF 숫자가 아니라 실제 창(HWND) 안쪽 높이로 버튼 아래 끝이 들어오는지 (사용자 화면에서 버튼 아래 절반이 잘림)
+        Native.GetClientRect(new System.Windows.Interop.WindowInteropHelper(memo).Handle, out var cr);
+        var btnPx = lastBtn.PointToScreen(new Point(0, lastBtn.ActualHeight)).Y - memo.PointToScreen(new Point(0, 0)).Y;
+        Row("7 메모 창 실제 창 안 잘림", btnPx <= cr.Bottom, $"버튼 아래 {btnPx:F0}px · 실제 창 안쪽 높이 {cr.Bottom}px");
+        // 창이 작게 잡혀도(사용자 화면에서 생긴 상태를 일부러 만듦) FitHeight가 다시 키운다
+        memo.SizeToContent = SizeToContent.Manual; memo.Height = memo.ActualHeight - 40; memo.UpdateLayout(); await Task.Delay(200);
+        var grew = memo.FitHeight(); memo.UpdateLayout(); await Task.Delay(200);
+        Native.GetClientRect(new System.Windows.Interop.WindowInteropHelper(memo).Handle, out var cr2);
+        var btnPx2 = lastBtn.PointToScreen(new Point(0, lastBtn.ActualHeight)).Y - memo.PointToScreen(new Point(0, 0)).Y;
+        Row("7 메모 창 작게 잡혀도 다시 키움", grew && btnPx2 <= cr2.Bottom, $"키움 {grew} · 버튼 아래 {btnPx2:F0}px · 실제 창 안쪽 높이 {cr2.Bottom}px");
         var closed = false; memo.Closed += (_, _) => closed = true;
         picker.FakeEsc();
         await Task.Delay(500);
@@ -354,42 +355,10 @@ public static class Selftest
         Console.WriteLine($"시험 흔적 지움: selftest pick {all.Count - keep.Count}건" + (rec != null ? $", {rec.Id} 영상·표·장면" : ""));
     }
 
-    // 시험 대상이 맨 앞이 아니면 다른 앱을 누르게 되므로 멈춘다
-    static void Front(IntPtr h)
-    {
-        for (int i = 0; i < 4 && Native.GetForegroundWindow() != h; i++)
-        {
-            if (i >= 2) { Native.ShowWindow(h, 6); Thread.Sleep(300); } // 최소화했다가
-            Native.ShowWindow(h, 9);                                      // 되살리기
-            Native.SetForegroundWindow(h);
-            try { AutomationElement.FromHandle(h).SetFocus(); } catch { }
-            Thread.Sleep(500);
-        }
-        if (Native.GetForegroundWindow() != h) throw new SkipException("IINA 창을 맨 앞으로 못 올림(다른 앱 사용 중)");
-    }
-
     static Point Center(Rect r) => new(r.X + r.Width / 2, r.Y + r.Height / 2);
 
     static async Task<string> Call(McpClient c, string tool, Dictionary<string, object?> a) =>
         string.Join("\n", (await c.CallToolAsync(tool, a)).Content.OfType<TextContentBlock>().Select(t => t.Text));
-
-    static async Task<AutomationElement> IinaWindow()
-    {
-        if (!Process.GetProcessesByName("IINA").Any(x => x.MainWindowHandle != IntPtr.Zero))
-            Process.Start(Environment.GetEnvironmentVariable("IINA_EXE") ?? @"C:\Users\gusql\AppData\Local\Programs\IINA\IINA.exe");
-        // Electron은 처음 띄운 프로세스가 아닌 다른 프로세스가 창을 가진다 → 창이 있고 settings 버튼까지 그려진 프로세스를 기다린다
-        var cond = new PropertyCondition(AutomationElement.AutomationIdProperty, "settings");
-        for (int i = 0; i < 80; i++)
-        {
-            foreach (var x in Process.GetProcessesByName("IINA").Where(x => x.MainWindowHandle != IntPtr.Zero))
-            {
-                var w = AutomationElement.FromHandle(x.MainWindowHandle);
-                if (w.FindFirst(TreeScope.Descendants, cond) != null) { Front(x.MainWindowHandle); return w; }
-            }
-            await Task.Delay(250);
-        }
-        throw new SkipException("IINA 창(설정 버튼)이 20초 안에 안 뜸");
-    }
 
     static double Probe(string f)
     {
