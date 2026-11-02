@@ -1,5 +1,15 @@
 # PLAN (끝까지 모드, 2026-10-20)
 
+<!-- namunil:begin — 남은일이 자동으로 쓰는 칸. 고칠 때는 남은일 앱이나 namunil MCP로 -->
+## 남은일
+
+### 미룬 일
+- (없음)
+
+### 결정(새 것이 위)
+- (없음)
+<!-- namunil:end -->
+
 C# WPF 프로그램 하나 `src/UiNametag` (.NET 10). 모드: `build-catalog` · 상주 picker(기본) · `mcp`(stdio) · `selftest` · `probe`.
 시험 대상: IINA(Electron) + 소스 `Desktop/iina/src`.
 

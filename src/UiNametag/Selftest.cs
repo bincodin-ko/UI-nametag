@@ -325,6 +325,35 @@ public static class Selftest
         var small1 = partRect is { } pr && pr.Width <= 120 && pr.Height <= 60;
         var covers = dp != null && dsize.Length > 0 && int.Parse(dsize.Split('×')[0]) >= far.X + 150 - part.X && int.Parse(dsize.Split('×')[1]) >= far.Y + 200 - part.Y;
         Row("12 부품 밖 선까지 사진에", dp != null && small1 && covers && red > 20, $"부품 {Store.R(partRect ?? Rect.Empty).Aggregate("", (a, v) => a + v + " ")}· 사진 {dsize} · 부품 밖 빨간 점 {red}개");
+
+        // 13 사진이 화면 밖으로 나가도 저장된다 (화면 폭 꽉 찬 부품 + 여백 40 → 예전엔 ffmpeg 실패로 그림 없음, 대기열 #4·#5)
+        var pb = System.Windows.Forms.Screen.PrimaryScreen!.Bounds;
+        // 크기 + 왼쪽 절반·오른쪽 절반이 각각 검은 화면이 아닌지 (모니터마다 찍은 조각이 실제로 들어갔는지)
+        string ShotSize(double[] r, string n)
+        {
+            var f = Store.Shot(r, n); if (f == null) return "없음";
+            string sz;
+            using (var b = new System.Drawing.Bitmap(f))
+            {
+                bool Lit(int x0, int x1) { for (int yy = 0; yy < b.Height; yy += 3) for (int xx = x0; xx < x1; xx += 3) { var c = b.GetPixel(xx, yy); if (c.R + c.G + c.B > 30) return true; } return false; }
+                sz = $"{b.Width}×{b.Height}" + (Lit(0, b.Width / 2) && Lit(b.Width / 2, b.Width) ? "" : " 검은 부분 있음");
+            }
+            File.Delete(f); return sz;
+        }
+        var vs = System.Windows.Forms.SystemInformation.VirtualScreen;
+        var wideShot = ShotSize([pb.Left + 60, pb.Bottom - 320, pb.Width, 256], "selftest_wide"); // 여백 40 → 오른쪽이 화면 밖 80px
+        var wantW = Math.Min(pb.Right + 100, vs.Right) - (pb.Left + 20);
+        Row("13 화면 폭 넘는 사진 저장", wideShot == $"{wantW}×{256 + 80}", $"사진 {wideShot} (기대 {wantW}×{256 + 80})");
+        // 두 모니터에 걸친 영역: 양쪽 모니터 부분이 한 장에 들어간다
+        var other = System.Windows.Forms.Screen.AllScreens.FirstOrDefault(x => !x.Primary);
+        if (other != null)
+        {
+            var ob = other.Bounds;
+            var y = Math.Max(ob.Top, pb.Top) + 100;
+            var x1 = ob.Right <= pb.Left ? pb.Left - 200 : pb.Right - 200; // 경계 양쪽 200px씩
+            var both = ShotSize([x1 + 40, y + 40, 320, 120], "selftest_both");
+            Row("13 두 모니터 걸친 사진 저장", both == "400×200", $"사진 {both} (기대 400×200) · 옆 모니터 {ob}");
+        }
     }
 
     static IEnumerable<T> FindAll<T>(DependencyObject d) where T : DependencyObject

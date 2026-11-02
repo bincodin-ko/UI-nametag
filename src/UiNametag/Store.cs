@@ -94,11 +94,46 @@ public static class Store
 
     public static string Crop(double[] r) => $"crop={(int)r[2] / 2 * 2}:{(int)r[3] / 2 * 2}:{(int)Math.Max(0, r[0])}:{(int)Math.Max(0, r[1])}";
 
+    // 화면 사진. 영역을 모니터마다 잘라 찍고 한 장으로 합친다.
+    // 예전엔 주 모니터(ddagrab output_idx=0)만, 화면 밖까지 나간 영역 그대로 잘라서 ffmpeg가 실패 → 그림 없음(2026-11-03 #4·#5, 듀얼 모니터 #426)
     public static string? Shot(double[] rect, string name, double pad = 40)
     {
         var path = Path.Combine(Catalog.DataDir, name + ".png");
-        Ffmpeg($"-f lavfi -i ddagrab=output_idx=0:framerate=5 -vf \"hwdownload,format=bgra,{Crop(Pad(rect, pad))}\" -frames:v 1 \"{path}\"");
-        return File.Exists(path) ? path : null;
+        var r = Pad(rect, pad);
+        var area = System.Drawing.Rectangle.Intersect(new((int)r[0], (int)r[1], (int)r[2], (int)r[3]), System.Windows.Forms.SystemInformation.VirtualScreen);
+        if (area.Width < 2 || area.Height < 2) return null;
+        using var bmp = new System.Drawing.Bitmap(area.Width, area.Height);
+        using (var g = System.Drawing.Graphics.FromImage(bmp))
+        {
+            g.Clear(System.Drawing.Color.Black);
+            foreach (var s in System.Windows.Forms.Screen.AllScreens)
+            {
+                var part = System.Drawing.Rectangle.Intersect(area, s.Bounds);
+                if (part.Width < 2 || part.Height < 2) continue;
+                // 주 모니터는 ddagrab(GPU 영상도 찍힘). 옆 모니터는 ffmpeg 출력 번호를 크기로 못 가려(둘 다 2560×1440으로 보고) 화면 복사로
+                // ponytail: 옆 모니터의 GPU 영상은 검게 찍힐 수 있음, 필요하면 DXGI 출력 좌표로 output_idx를 찾아 ddagrab
+                using var piece = (s.Primary ? Grab(part, s.Bounds) : null) ?? Copy(part);
+                g.DrawImage(piece, part.X - area.X, part.Y - area.Y, piece.Width, piece.Height);
+            }
+        }
+        bmp.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+        return path;
+    }
+
+    static System.Drawing.Bitmap? Grab(System.Drawing.Rectangle part, System.Drawing.Rectangle screen)
+    {
+        var tmp = Path.Combine(Path.GetTempPath(), $"uinametag_{Guid.NewGuid():N}.png");
+        Ffmpeg($"-f lavfi -i ddagrab=output_idx=0:framerate=5 -vf \"hwdownload,format=bgra,{Crop([part.X - screen.X, part.Y - screen.Y, part.Width, part.Height])}\" -frames:v 1 \"{tmp}\"");
+        if (!File.Exists(tmp)) return null;
+        try { using var f = new System.Drawing.Bitmap(tmp); return new System.Drawing.Bitmap(f); } finally { File.Delete(tmp); }
+    }
+
+    static System.Drawing.Bitmap Copy(System.Drawing.Rectangle part)
+    {
+        var b = new System.Drawing.Bitmap(part.Width, part.Height);
+        using var g = System.Drawing.Graphics.FromImage(b);
+        g.CopyFromScreen(part.Location, System.Drawing.Point.Empty, part.Size);
+        return b;
     }
 
     // 사각형들과 점들(그림 선, [-1,-1]은 끊김 표시)을 모두 감싸는 사각형
@@ -110,5 +145,5 @@ public static class Store
         return [x1, y1, x2 - x1, y2 - y1];
     }
 
-    public static double[] Pad(double[] r, double p) => [Math.Max(0, r[0] - p), Math.Max(0, r[1] - p), r[2] + 2 * p, r[3] + 2 * p];
+    public static double[] Pad(double[] r, double p) => [r[0] - p, r[1] - p, r[2] + 2 * p, r[3] + 2 * p]; // 화면 밖은 Shot이 잘라냄
 }

@@ -1,5 +1,19 @@
 # NOTSOLUTION
 
+<!-- namunil:begin — 남은일이 자동으로 쓰는 칸. 고칠 때는 남은일 앱이나 namunil MCP로 -->
+## 남은일
+
+### 사용자가 직접 할 일
+- (없음)
+
+### A 나중에 고칠 것(Claude 남은 일)
+- [ ] #508 UiNametag: 옆 모니터 사진에서 재생 중인 영상이 검게 찍힐 수 있음 (화면 복사 한계) — Store.Shot은 주 모니터만 ffmpeg ddagrab, 옆 모니터는 CopyFromScreen. ddagrab output_idx를 DXGI 출력 좌표(IDXGIOutput::GetDesc DesktopCoordinates·Rotation)로 찾아 옆 모니터도 ddagrab으로 찍으면 해결. 세로 모니터는 회전 처리 필요. Recorder.cs 녹화도 output_idx=0 고정이라 같은 문제. 끝나면: 옆 모니터 영상 위 부품을 골라 대기열 그림에 영상이 보이면 정상.
+
+### B 받아들인 한계(타협)
+- (없음)
+<!-- namunil:end -->
+
+
 ## 사용자가 직접 할 일
 | 할 일 | 어떻게 | 시간 | 끝나면 할 말 | 풀어 주는 작업 | 상태 |
 |---|---|---|---|---|---|
